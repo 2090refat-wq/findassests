@@ -6,3 +6,4 @@ output/
 extract_run.log
 extract_redo.log
 dl_run*.log
+__pycache__/
