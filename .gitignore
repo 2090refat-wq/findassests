@@ -1,0 +1,5 @@
+downloads/
+extracted/
+output/
+*.sqlite
+*.log
