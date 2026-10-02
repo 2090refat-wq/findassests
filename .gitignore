@@ -3,3 +3,4 @@ extracted/
 output/
 *.sqlite
 *.log
+extract_run.log
