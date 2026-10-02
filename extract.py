@@ -79,6 +79,16 @@ def parse_line(line, ctx):
         return None
     # locate BO
     bo_i = next((i for i, t in enumerate(toks) if BO.match(t)), None)
+    # layout with the name printed BEFORE the BO ID: move the BO in front of the name so one code path handles both
+    if (bo_i is not None and bo_i + 1 < len(toks) and (INT.match(toks[bo_i + 1]) or MONEY.match(toks[bo_i + 1]))
+            and any(re.search(r"[A-Za-z\u0980-\u09FF]", t) and not re.search(r"\d", t) for t in toks[:bo_i])):
+        a = next((i for i in range(bo_i) if re.search(r"[A-Za-z\u0980-\u09FF]", toks[i]) and not re.search(r"\d", toks[i])), None)
+        if a is not None:
+            jn = a
+            while jn < bo_i and not re.search(r"\d", toks[jn]):
+                jn += 1
+            toks = toks[:a] + [toks[bo_i]] + toks[a:jn] + toks[jn:bo_i] + toks[bo_i + 1:]
+            bo_i = a
     # first alphabetic name token (no digits, has a letter), after any id region
     start = (bo_i + 1) if bo_i is not None else 0
     name_i = None

@@ -148,7 +148,8 @@ print("dividend rows:", len(div))
 # duplicated (company, year, folio/bo, amount)
 key = div["company"] + "|" + div["dividend_year"].astype(str) + "|" + div["bo_id"].where(div["bo_id"] != "", div["folio_no"]) \
     + "|" + div["net_amount"].fillna(div["shares"]).astype(str)
-dupmask = key.duplicated(keep=False)
+hasid = (div["bo_id"] != "") | (div["folio_no"] != "")
+dupmask = key.duplicated(keep=False) & hasid
 div.loc[dupmask, "issues"] = div.loc[dupmask, "issues"].apply(lambda x: (x + ";dup_row").strip(";"))
 
 # ---------- matching ----------
@@ -178,7 +179,8 @@ for idx, r in div.iterrows():
 for ids in by_bo.values():
     for j in ids[1:]:
         union(ids[0], j); method_of[j] = "bo_exact"
-    method_of[ids[0]] = "bo_exact" if len(ids) > 1 else method_of.get(ids[0], "")
+    if len(ids) > 1:
+        method_of[ids[0]] = "bo_exact"
 for ids in by_folio.values():
     for j in ids[1:]:
         union(ids[0], j); method_of[j] = "folio_company"
@@ -214,6 +216,11 @@ for k, ids in blocks.items():
                                     + ("different companies" if div.at[ia, "company"] != div.at[ib, "company"] else "same company"),
                            score=100.0, decision=""))
 review_df = pd.DataFrame(review)
+REVIEW_TOTAL = len(review_df)
+if REVIEW_TOTAL > 5000:
+    amt = div.set_index("dividend_id")["net_amount"].fillna(0)
+    review_df["_p"] = review_df["dividend_id_a"].map(amt) + review_df["dividend_id_b"].map(amt)
+    review_df = review_df.sort_values("_p", ascending=False).head(5000).drop(columns="_p")
 
 # ---------- settled flag ----------
 sd = pd.DataFrame(settled)
@@ -273,7 +280,7 @@ lines = ["# Unclaimed dividends - summary", "", f"Documents: {pc}", f"Dividend r
          f"Holders: {len(holders):,}", f"Total cash BDT (all rows): {cash['net_amount'].sum():,.2f}",
          f"Total shares (stock rows): {div_out['shares'].sum():,.0f}",
          f"Holders in 2+ companies: {(holders['companies_count'] >= 2).sum():,}",
-         f"Match methods: {Counter(div_out['match_method'])}", f"Review queue: {len(review_df):,}", "",
+         f"Match methods: {Counter(div_out['match_method'])}", f"Review queue: {len(review_df):,} written (of {REVIEW_TOTAL:,} candidate pairs; highest-value 5,000 kept)", "",
          "## Top 10 companies by cash BDT", cash.groupby("company")["net_amount"].sum().nlargest(10).round(2).to_string(),
          "", "## Cash BDT by year", cash.groupby("year_start")["net_amount"].sum().round(2).to_string()]
 (OUT / "summary.md").write_text("\n".join(lines))

@@ -4,3 +4,5 @@ output/
 *.sqlite
 *.log
 extract_run.log
+extract_redo.log
+dl_run*.log
