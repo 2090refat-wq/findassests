@@ -7,336 +7,293 @@
 <meta name="description" content="Search published unclaimed dividend lists of listed companies and CMSF by BO ID or folio number.">
 <meta name="theme-color" content="#00563f">
 <title>Unclaimed Dividend Lookup</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300563f'/%3E%3Ccircle cx='14' cy='14' r='6.5' fill='none' stroke='white' stroke-width='2.6'/%3E%3Cpath d='M19 19l6 6' stroke='white' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2300563f'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='15' fill='white' text-anchor='middle'%3EUD%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="fonts/noto-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-@font-face{font-family:"Inter";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/inter-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/noto-sans-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:"Noto Sans Bengali";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/noto-bengali.woff2) format("woff2");unicode-range:U+0951-0952,U+0964-0965,U+0980-09FE,U+1CD0,U+1CD2,U+1CD5-1CD6,U+1CD8,U+1CE1,U+1CEA,U+1CED,U+1CF2,U+1CF5-1CF7,U+200C-200D,U+20B9,U+25CC,U+A8F1}
 
 :root{
-  --bg:#f3f5f4; --surface:#ffffff; --surface-2:#f7f9f8; --ink:#0f1a16; --ink-2:#3d4b45; --muted:#5d6b65; --line:#d5ddd9; --line-strong:#9aa8a1;
-  --brand:#00563f; --brand-hover:#00412f; --brand-ink:#ffffff; --brand-tint:#e6f1ec; --brand-tint-2:#cfe5da;
-  --band:#00432f; --band-ink:#e9f5ef;
-  --focus:#ffbf47; --focus-ink:#0b0c0c;
-  --warn-ink:#7a4b00; --warn-bg:#fff3d6; --warn-line:#e9b949;
-  --err:#b3261e; --err-bg:#fdecea;
-  --info-bg:#eaf2fb; --info-line:#1d5fa8;
-  --shadow:0 1px 2px rgba(16,24,20,.06),0 2px 8px rgba(16,24,20,.05);
-  --radius:12px; --radius-sm:8px;
-  --font:"Inter","Noto Sans Bengali",system-ui,-apple-system,"Segoe UI",Roboto,"Nirmala UI",sans-serif;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0d1412; --surface:#151f1b; --surface-2:#1a2622; --ink:#e7efeb; --ink-2:#c3d0ca; --muted:#97a8a0; --line:#2b3a34; --line-strong:#4a5c54;
-    --brand:#3fbf8f; --brand-hover:#5fd1a5; --brand-ink:#04241a; --brand-tint:#173029; --brand-tint-2:#1f3d33;
-    --band:#0a2a1f; --band-ink:#d6eee3;
-    --warn-ink:#f3c96b; --warn-bg:#33290f; --warn-line:#8a6a1c;
-    --err:#ff9b93; --err-bg:#3a1a18;
-    --info-bg:#14243a; --info-line:#6fa6e8;
-    --shadow:none; color-scheme:dark;
-  }
+  --text:#0b0c0c; --secondary:#505a5f; --border:#b1b4b6; --input:#0b0c0c; --rule:#d9dcdd;
+  --brand:#00563f; --brand-dark:#003d2d; --link:#1d5a8e; --link-hover:#003078;
+  --button:#00703c; --button-shadow:#002d18; --button-hover:#005a30;
+  --grey:#f3f2f1; --error:#d4351c; --focus:#ffdd00;
+  --font:"Noto Sans","Noto Sans Bengali",Arial,"Nirmala UI",sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--font);font-feature-settings:"cv11","ss01";-webkit-font-smoothing:antialiased}
-:lang(bn) body, html[lang="bn"] body{line-height:1.7}
-a{color:var(--brand);text-underline-offset:.18em;text-decoration-thickness:1px}
-a:hover{text-decoration-thickness:2px}
-:focus-visible{outline:3px solid var(--focus);outline-offset:2px;box-shadow:0 0 0 6px color-mix(in srgb,var(--focus) 25%,transparent)}
-.sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.skip{position:absolute;left:12px;top:-60px;background:var(--focus);color:var(--focus-ink);padding:10px 14px;border-radius:6px;font-weight:600;z-index:10;text-decoration:none}
-.skip:focus{top:10px}
+html{-webkit-text-size-adjust:100%;background:var(--grey)}
+body{margin:0;background:#fff;color:var(--text);font:400 1.1875rem/1.5 var(--font);-webkit-font-smoothing:antialiased}
+@media (max-width:640px){body{font-size:1rem}}
+html[lang="bn"] body{line-height:1.65}
 [hidden]{display:none!important}
-.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+.sr{position:absolute!important;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.width{max-width:960px;margin:0 auto;padding:0 30px}
+@media (max-width:640px){.width{padding:0 15px}}
 
-/* top band */
-.band{background:var(--band);color:var(--band-ink);font-size:.875rem}
-.band .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px;flex-wrap:wrap;padding-top:4px;padding-bottom:4px}
-.phase{display:flex;align-items:center;gap:10px;min-width:0}
-.tag{display:inline-block;background:#ffbf47;color:#1a1300;font-weight:700;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap}
-.lang{display:flex;gap:2px;background:rgba(255,255,255,.08);padding:3px;border-radius:8px}
-.lang button{appearance:none;border:0;background:none;color:var(--band-ink);font:inherit;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;min-height:30px}
-.lang button[aria-pressed="true"]{background:#fff;color:#00432f}
+a{color:var(--link);text-decoration:underline;text-decoration-thickness:max(1px,.0625rem);text-underline-offset:.15em}
+a:hover{color:var(--link-hover);text-decoration-thickness:max(3px,.1875rem)}
+a:focus{outline:3px solid transparent;color:var(--text);background:var(--focus);box-shadow:0 -2px var(--focus),0 4px var(--text);text-decoration:none}
+
+.skip{position:absolute;left:-9999px;top:0;padding:10px 15px;font-size:1rem}
+.skip:focus{left:0;z-index:10}
 
 /* header */
-.masthead{background:var(--surface);border-bottom:1px solid var(--line)}
-.masthead .wrap{display:flex;align-items:center;gap:12px;min-height:68px}
-.logo{width:36px;height:36px;flex:none}
-.brandname{font-weight:700;font-size:1.06rem;line-height:1.2;color:var(--ink)}
-.brandname small{display:block;font-weight:500;color:var(--muted);font-size:.84rem}
+.hdr{background:var(--brand);color:#fff;border-bottom:10px solid var(--brand-dark)}
+.hdr .width{display:flex;align-items:center;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;padding-top:14px;padding-bottom:12px}
+.svc{color:#fff;text-decoration:none;font-weight:700;font-size:1.25rem;line-height:1.25}
+.svc:hover{color:#fff;text-decoration:underline}
+.svc small{display:block;font-weight:400;font-size:.95rem;opacity:.9}
+.lang{display:flex;gap:2px;font-size:1rem;margin:0;padding:0;list-style:none}
+.lang li+li::before{content:"|";padding:0 8px;opacity:.6}
+.lang button{appearance:none;background:none;border:0;padding:2px 0;font:inherit;color:#fff;cursor:pointer;text-decoration:underline;text-underline-offset:.15em}
+.lang button[aria-current="true"]{text-decoration:none;font-weight:700;cursor:default}
+.lang button:focus-visible{outline:3px solid transparent;background:var(--focus);color:var(--text);box-shadow:0 -2px var(--focus),0 4px var(--text);text-decoration:none}
 
-/* hero */
-.hero{padding:36px 0 8px}
-h1{font-size:clamp(1.75rem,1.2rem + 2.2vw,2.5rem);line-height:1.15;letter-spacing:-.022em;margin:0 0 10px;font-weight:700;max-width:22ch}
-html[lang="bn"] h1{letter-spacing:0;line-height:1.3}
-.lead{font-size:1.125rem;color:var(--ink-2);margin:0;max-width:62ch}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin:24px 0 0}
-.stat{background:var(--surface);padding:14px 16px}
-.stat dt{font-size:.8rem;color:var(--muted);font-weight:500}
-.stat dd{margin:2px 0 0;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-.stat dd.sk{color:transparent;background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:sh 1.2s linear infinite;border-radius:4px;width:70%}
-@keyframes sh{to{background-position:-200% 0}}
-@media (max-width:680px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* phase banner */
+.phase{border-bottom:1px solid var(--border);padding:10px 0;font-size:1rem}
+.phase p{margin:0;display:flex;gap:10px;align-items:baseline}
+.tag{display:inline-block;font-weight:700;font-size:.875rem;line-height:1;padding:5px 8px 4px;background:#d2e2f1;color:#0c2d4a;letter-spacing:.02em;flex:none}
 
-/* card + search */
-main{padding-bottom:56px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
-.search{margin-top:24px;padding:8px 24px 24px}
-@media (max-width:520px){.search{padding:6px 16px 18px}}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 -24px 20px;padding:0 24px}
-@media (max-width:520px){.tabs{margin:0 -16px 18px;padding:0 16px}}
-.tab{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:14px 12px 11px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px}
-.tab:hover{color:var(--ink)}
-.tab[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
-.tab svg{width:18px;height:18px;flex:none}
-.field{margin-bottom:16px}
-.field:last-child{margin-bottom:0}
-label,.label{display:block;font-weight:600;font-size:1rem;margin:0 0 4px}
-.hint{color:var(--muted);font-size:.9rem;margin:0 0 10px}
-.row{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
-input,select{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line-strong);border-radius:var(--radius-sm);padding:10px 14px;min-height:52px;width:100%;transition:border-color .15s}
-input:hover,select:hover{border-color:var(--ink-2)}
-input:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:0;border-color:var(--ink);box-shadow:none}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235d6b65' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
-.bo-wrap{flex:1 1 300px;position:relative}
-#bo{font-size:1.3rem;letter-spacing:.06em;font-variant-numeric:tabular-nums;font-feature-settings:"tnum","zero";padding-right:84px}
-.counter{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none}
-.counter.ok{color:var(--brand);font-weight:600}
-#folio{flex:1 1 260px;width:auto;font-size:1.1rem;letter-spacing:.03em}
-.btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--brand);color:var(--brand-ink);border:0;border-radius:var(--radius-sm);padding:0 26px;min-height:52px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 2px 0 var(--brand-hover);transition:background .15s}
-.btn:hover{background:var(--brand-hover)}
-.btn:active{transform:translateY(1px);box-shadow:none}
-.btn[aria-disabled="true"]{opacity:.75;cursor:progress}
-.btn .spin{width:18px;height:18px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .7s linear infinite;display:none}
-.btn[aria-disabled="true"] .spin{display:inline-block}
-@keyframes rot{to{transform:rotate(360deg)}}
-.btn-2{appearance:none;display:inline-flex;align-items:center;gap:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:0 14px;min-height:40px;font:inherit;font-size:.92rem;font-weight:600;cursor:pointer}
-.btn-2:hover{background:var(--surface-2)}
-.btn-2 svg{width:16px;height:16px}
-@media (max-width:520px){.row>.btn{flex:1 1 100%}}
+main{padding:30px 0 60px}
+main:focus{outline:none}
+@media (max-width:640px){main{padding-top:20px}}
+h1{font-size:3rem;line-height:1.04;font-weight:700;margin:0 0 30px;max-width:16em}
+@media (max-width:640px){h1{font-size:2rem;line-height:1.1;margin-bottom:20px}}
+html[lang="bn"] h1{line-height:1.25}
+h2{font-size:2.25rem;line-height:1.11;font-weight:700;margin:0 0 20px}
+@media (max-width:640px){h2{font-size:1.5rem;line-height:1.25;margin-bottom:15px}}
+html[lang="bn"] h2{line-height:1.3}
+h3{font-size:1.5rem;line-height:1.25;font-weight:700;margin:0 0 15px}
+@media (max-width:640px){h3{font-size:1.125rem}}
+p{margin:0 0 20px}
+.lead{font-size:1.5rem;line-height:1.35;margin-bottom:30px;max-width:30em}
+@media (max-width:640px){.lead{font-size:1.125rem}}
+.muted{color:var(--secondary)}
+.small{font-size:1rem}
+.rule{border:0;border-top:1px solid var(--rule);margin:40px 0}
 
-/* error pattern (GOV.UK style) */
-.has-err{border-left:4px solid var(--err);padding-left:14px;margin-left:-18px}
-@media (max-width:520px){.has-err{margin-left:-12px;padding-left:8px}}
-.err-msg{color:var(--err);font-weight:600;margin:0 0 8px;display:flex;gap:6px;align-items:flex-start}
-.has-err input,.has-err select{border-color:var(--err)}
+/* tabs (GOV.UK style) */
+.tabs{margin-bottom:30px}
+.tablist{display:flex;margin:0;padding:0;list-style:none}
+.tablist li{margin-right:5px}
+.tab{appearance:none;display:block;font:inherit;font-size:1.1875rem;color:var(--link);background:var(--grey);border:1px solid transparent;border-bottom:0;padding:10px 20px;cursor:pointer;text-decoration:underline;text-underline-offset:.15em;margin-bottom:0}
+.tab:hover{color:var(--link-hover)}
+.tab[aria-selected="true"]{background:#fff;color:var(--text);text-decoration:none;border-color:var(--border);margin-bottom:-1px;padding:14px 19px 16px;position:relative}
+.tab:focus-visible{outline:3px solid transparent;background:var(--focus);color:var(--text);box-shadow:0 -2px var(--focus),0 4px var(--text);text-decoration:none}
+.tablist{align-items:flex-end}
+.panel{border:1px solid var(--border);padding:30px 20px 25px}
+@media (max-width:640px){.tab{font-size:1rem;padding:8px 12px}.tab[aria-selected="true"]{padding:12px 11px 13px}.panel{padding:20px 15px}}
 
-/* notices */
-.notice{display:flex;gap:12px;align-items:flex-start;border-radius:var(--radius-sm);padding:14px 16px;margin-top:18px;border-left:4px solid}
-.notice svg{width:20px;height:20px;flex:none;margin-top:2px}
-.notice p{margin:0}
-.notice.err{background:var(--err-bg);border-color:var(--err);color:var(--ink)}
-.notice.err svg{color:var(--err)}
-.notice.warn{background:var(--warn-bg);border-color:var(--warn-line)}
-.notice.warn svg{color:var(--warn-ink)}
-.notice.info{background:var(--info-bg);border-color:var(--info-line)}
-.notice.info svg{color:var(--info-line)}
-.notice .btn-2{margin-top:10px}
+/* form controls */
+.group{margin-bottom:25px}
+.group:last-child{margin-bottom:0}
+label,.label{display:block;font-weight:700;margin-bottom:5px}
+.hint{display:block;color:var(--secondary);margin-bottom:15px}
+input,select{font:inherit;color:var(--text);background:#fff;border:2px solid var(--input);border-radius:0;padding:5px 8px;height:2.5em;width:100%;appearance:none}
+input:focus,select:focus{outline:3px solid var(--focus);outline-offset:0;box-shadow:inset 0 0 0 2px}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%230b0c0c' stroke-width='2.2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:38px;max-width:30em}
+#bo{max-width:15em;font-size:1.375rem;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+#folio{max-width:12em}
+#code{max-width:15em}
+.count{display:block;margin-top:5px;font-size:1rem;color:var(--secondary);min-height:1.5em}
+.count.ok{color:var(--button);font-weight:700}
+.err-msg{display:block;color:var(--error);font-weight:700;margin-bottom:15px}
+.group.has-err{border-left:5px solid var(--error);padding-left:15px}
+.has-err input,.has-err select{border-color:var(--error)}
+.has-err input:focus,.has-err select:focus{border-color:var(--input)}
 
-/* results */
-#result{margin-top:24px;scroll-margin-top:16px}
-#result:focus,#result:focus-visible{outline:none;box-shadow:none}
-.res-head{padding:22px 24px 18px;border-bottom:1px solid var(--line)}
-@media (max-width:520px){.res-head{padding:18px 16px 14px}}
-.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 6px}
-html[lang="bn"] .eyebrow{letter-spacing:0;text-transform:none;font-size:.85rem}
-.res-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px 24px;flex-wrap:wrap}
-.res-title h2{margin:0;font-size:1.5rem;line-height:1.25;letter-spacing:-.01em}
-.res-title .sub{color:var(--muted);font-size:.9rem;margin-top:2px}
-.meta{display:grid;grid-template-columns:auto auto;gap:2px 14px;font-size:.88rem;margin:0}
-.meta dt{color:var(--muted)}
-.meta dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
-.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:18px 24px}
-@media (max-width:760px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tile.primary{grid-column:1/-1}}
-@media (max-width:520px){.tiles{padding:14px 16px}}
-.tile{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--surface-2)}
-.tile.primary{background:var(--brand-tint);border-color:var(--brand-tint-2)}
-.tile .k{font-size:.82rem;color:var(--muted);font-weight:500}
-.tile .v{font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.015em;line-height:1.25;margin-top:4px;overflow-wrap:anywhere}
-.tile.primary .v{color:var(--brand)}
-.tile .s{font-size:.78rem;color:var(--muted);margin-top:2px}
-.res-body{padding:0 24px 24px}
-@media (max-width:520px){.res-body{padding:0 16px 18px}}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin:4px 0 12px}
-.toolbar .grp{display:flex;gap:8px;flex-wrap:wrap}
-.co{border:1px solid var(--line);border-radius:10px;margin-top:10px;overflow:hidden;background:var(--surface)}
-.co>summary{list-style:none;cursor:pointer;padding:14px 16px;display:grid;grid-template-columns:1fr auto 20px;gap:12px;align-items:center}
+.btn{appearance:none;display:inline-block;font:inherit;font-size:1.1875rem;line-height:1.2;font-weight:400;color:#fff;background:var(--button);border:2px solid transparent;border-radius:0;box-shadow:0 2px 0 var(--button-shadow);padding:8px 14px 7px;cursor:pointer;margin:0 0 2px;text-align:center}
+@media (max-width:640px){.btn{width:100%;font-size:1rem}}
+.btn:hover{background:var(--button-hover)}
+.btn:focus-visible{outline:3px solid transparent;border-color:var(--focus);background:var(--focus);color:var(--text);box-shadow:inset 0 0 0 1px var(--focus),0 2px 0 var(--text)}
+.btn:active{top:2px;position:relative;box-shadow:none}
+.btn[aria-disabled="true"]{opacity:.5;cursor:progress}
+.btn.secondary{background:var(--grey);color:var(--text);box-shadow:0 2px 0 #929191}
+.btn.secondary:hover{background:#dbdad9}
+.actions{margin:30px 0 20px}
+.linkbtn{appearance:none;background:none;border:0;padding:0;font:inherit;color:var(--link);text-decoration:underline;text-underline-offset:.15em;cursor:pointer;text-align:left}
+.linkbtn:hover{color:var(--link-hover);text-decoration-thickness:3px}
+.linkbtn:focus-visible{outline:3px solid transparent;background:var(--focus);color:var(--text);box-shadow:0 -2px var(--focus),0 4px var(--text);text-decoration:none}
+
+/* error summary */
+.err-sum{border:5px solid var(--error);padding:15px 20px;margin-bottom:30px}
+.err-sum:focus{outline:3px solid var(--focus);outline-offset:0}
+.err-sum h2{font-size:1.5rem;margin:0 0 15px}
+.err-sum ul{margin:0;padding:0;list-style:none}
+.err-sum li{margin-bottom:5px}
+.err-sum a{color:var(--error);font-weight:700}
+.err-sum p{margin:0 0 15px}
+.err-sum p:last-child{margin:0}
+
+/* inset */
+.inset{border-left:10px solid var(--border);padding:15px;margin:0 0 30px}
+.inset p:last-child{margin:0}
+
+/* summary list */
+.summary{margin:0 0 30px;display:table;width:100%;border-collapse:collapse}
+.summary .row{display:table-row;border-bottom:1px solid var(--rule)}
+.summary dt,.summary dd{display:table-cell;padding:10px 20px 10px 0;margin:0;vertical-align:top}
+.summary dt{font-weight:700;width:35%}
+.summary dd{font-variant-numeric:tabular-nums}
+@media (max-width:640px){.summary,.summary .row{display:block}.summary .row{padding:10px 0}.summary dt,.summary dd{display:block;padding:0;width:auto}.summary dt{margin-bottom:3px}}
+.big{font-weight:700}
+
+/* companies */
+.acc-controls{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:10px}
+.acc.static{border-top:1px solid var(--rule)}
+.co{border-bottom:1px solid var(--rule)}
+.co>summary{list-style:none;cursor:pointer;padding:15px 0;display:grid;grid-template-columns:1fr auto;gap:3px 20px;align-items:baseline}
 .co>summary::-webkit-details-marker{display:none}
-.co>summary:hover{background:var(--surface-2)}
-.co h3{margin:0;font-size:1.02rem;line-height:1.3}
-.co .cnt{color:var(--muted);font-size:.82rem;font-weight:500;margin-top:2px}
-.nums{display:flex;gap:20px;font-variant-numeric:tabular-nums;text-align:right}
-.nums small{display:block;color:var(--muted);font-size:.74rem}
-.nums b{font-size:1rem;white-space:nowrap}
-.chev{width:20px;height:20px;color:var(--muted);transition:transform .2s}
-.co[open] .chev{transform:rotate(180deg)}
-@media (max-width:520px){.co>summary{grid-template-columns:1fr 20px}.co>summary .nums{grid-column:1;grid-row:2;justify-content:flex-start;text-align:left}.co>summary .chev{grid-column:2;grid-row:1}}
-.scroll{overflow-x:auto;border-top:1px solid var(--line)}
-table{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:10px 16px;border-bottom:1px solid var(--line);vertical-align:top}
-tr:last-child td{border-bottom:0}
-thead th{background:var(--surface-2);color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
-html[lang="bn"] thead th{text-transform:none;letter-spacing:0;font-size:.85rem}
-td.r,th.r{text-align:right;white-space:nowrap}
-td.uv{color:var(--muted)}
-.badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;border-radius:99px;padding:2px 8px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line);white-space:nowrap;vertical-align:1px;margin-left:6px}
-.ext{display:inline-flex;align-items:center;gap:4px}
-.ext svg{width:13px;height:13px;flex:none}
-.empty{padding:28px 24px}
-.empty h2{margin:0 0 8px;font-size:1.35rem}
-.empty ul{margin:8px 0 0;padding-left:20px;color:var(--ink-2)}
-.empty li{margin:4px 0}
-.steps{margin-top:22px;border-top:1px solid var(--line);padding-top:18px}
-.steps h3{margin:0 0 10px;font-size:1.1rem}
-.steps ol{list-style:none;margin:0;padding:0;counter-reset:s;display:grid;gap:10px}
-.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start}
-.steps li::before{content:counter(s);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand-tint);color:var(--brand);font-weight:700;font-size:.9rem}
-.steps li p{margin:3px 0 0}
+.co>summary:focus-visible{outline:3px solid transparent;background:var(--focus);box-shadow:0 -2px var(--focus),0 4px var(--text)}
+.co .name{font-weight:700;color:var(--text)}
+.co .meta{font-size:1rem;color:var(--secondary);font-variant-numeric:tabular-nums;grid-column:1}
+.co .tog{font-size:1rem;color:var(--link);text-decoration:underline;text-underline-offset:.15em;white-space:nowrap;grid-column:2;grid-row:1}
+.co>summary:hover .tog{color:var(--link-hover);text-decoration-thickness:3px}
+.co .tog::before{content:"";display:inline-block;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-3px) rotate(45deg);margin-right:8px}
+.co[open] .tog::before{transform:translateY(1px) rotate(-135deg)}
+.co .body{padding:0 0 25px}
+.static .co>summary{cursor:default}
+.static .co .tog{display:none}
 
-/* skeleton */
-.sk-block{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:sh 1.2s linear infinite;margin:10px 0}
+/* table */
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;border-spacing:0;font-size:1rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 20px 10px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-weight:700;border-bottom:1px solid var(--text);white-space:nowrap}
+.num{text-align:right;white-space:nowrap}
+td.uv{color:var(--secondary)}
+.chk{display:inline-block;margin-left:8px;font-size:.8125rem;font-weight:700;line-height:1;padding:4px 6px 3px;background:#fcd6c3;color:#6e3619;white-space:nowrap;vertical-align:1px}
 
-/* about */
-.about{margin-top:40px}
-.about h2{font-size:1.25rem;margin:0 0 10px}
-.faq{border-top:1px solid var(--line)}
-.faq details{border-bottom:1px solid var(--line)}
-.faq summary{cursor:pointer;padding:14px 4px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center}
-.faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";font-size:1.4rem;line-height:1;color:var(--muted);font-weight:400}
-.faq details[open] summary::after{content:"\2212"}
-.faq details p{margin:0 4px 16px;color:var(--ink-2);max-width:70ch}
+/* lists */
+ol.steps,ul.list{margin:0 0 20px;padding-left:20px}
+ol.steps li,ul.list li{margin-bottom:8px;padding-left:5px}
 
-footer{border-top:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.875rem;padding:24px 0 32px}
-footer p{margin:0 0 8px;max-width:80ch}
-footer strong{color:var(--ink-2)}
+/* help (GOV.UK details) */
+.help details{margin-bottom:15px}
+.help summary{display:inline-block;cursor:pointer;color:var(--link);text-decoration:underline;text-underline-offset:.15em;padding-left:25px;position:relative;list-style:none}
+.help summary::-webkit-details-marker{display:none}
+.help summary::before{content:"";position:absolute;left:0;top:.35em;border-style:solid;border-color:transparent;border-width:7px 0 7px 12px;border-left-color:currentColor}
+.help details[open] summary::before{border-width:12px 7px 0;border-top-color:currentColor;border-left-color:transparent;top:.45em}
+.help summary:hover{color:var(--link-hover);text-decoration-thickness:3px}
+.help summary:focus-visible{outline:3px solid transparent;background:var(--focus);color:var(--text);box-shadow:0 -2px var(--focus),0 4px var(--text);text-decoration:none}
+.help details>div{border-left:5px solid var(--border);padding:15px 15px 15px 20px;margin-top:10px}
+.help details>div p:last-child{margin:0}
+
+#result:focus{outline:none}
+#status{color:var(--secondary)}
+#status:not(:empty){padding:0 0 30px}
+
+/* footer */
+footer{background:var(--grey);border-top:1px solid var(--border);padding:25px 0 35px;font-size:1rem}
+footer p{max-width:44em;margin:0 0 15px}
+footer p:last-child{margin:0}
+
 .print-only{display:none}
-
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-
 @media print{
-  @page{margin:16mm 14mm}
-  body{background:#fff;color:#000;font-size:11pt}
-  .band,.masthead,.hero,.search,.toolbar,.about,.skip,.steps .btn-2,footer .noprint{display:none!important}
+  @page{margin:15mm}
+  html,body{background:#fff;font-size:11pt}
+  .hdr,.phase,.intro,.tabs,.help,.no-print,.acc-controls,.skip,#status{display:none!important}
   .print-only{display:block}
-  .card{box-shadow:none;border:0}
-  .res-head,.tiles,.res-body{padding-left:0;padding-right:0}
-  .tile{border:1px solid #999;background:#fff!important}
-  .tile .v,.tile.primary .v{color:#000}
-  .co{break-inside:avoid;border:1px solid #999}
-  .co>summary .chev{display:none}
-  details.co>*:not(summary){display:block!important}
+  main{padding:0}
+  .width{padding:0;max-width:none}
+  h2{font-size:16pt}
+  .co .tog{display:none}
+  .co{break-inside:avoid}
   a{color:#000;text-decoration:none}
-  thead th{background:#eee!important;color:#000}
-  .badge{border:1px solid #000;background:#fff;color:#000}
-  footer{background:#fff;border-top:1px solid #999;color:#000}
-  .phead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:12px}
+  footer{background:#fff;border-top:1px solid #000;padding-top:10px}
+  .phead{border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:16px;display:flex;justify-content:space-between}
 }
 </style>
 </head>
 <body>
-<a class="skip" href="#search" data-i18n="skip">Skip to search</a>
+<a class="skip" href="#main" data-i18n="skip">Skip to main content</a>
 
-<div class="band">
-  <div class="wrap">
-    <div class="phase"><span class="tag" data-i18n="tag">Prototype</span><span data-i18n="tagline">Figures come from published lists. Confirm with the company before acting on them.</span></div>
-    <div class="lang" role="group" aria-label="Language / ভাষা">
-      <button type="button" data-lang="en" aria-pressed="true" lang="en">English</button>
-      <button type="button" data-lang="bn" aria-pressed="false" lang="bn">বাংলা</button>
-    </div>
-  </div>
-</div>
-
-<header class="masthead">
-  <div class="wrap">
-    <svg class="logo" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="8" fill="#00563f"/><path d="M10 9h11l5 5v13a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2z" fill="none" stroke="#fff" stroke-width="1.8" opacity=".55"/><circle cx="17" cy="18" r="5.2" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M21 22l4.5 4.5" stroke="#ffbf47" stroke-width="2.6" stroke-linecap="round"/></svg>
-    <div class="brandname"><span data-i18n="brand">Unclaimed Dividend Lookup</span><small data-i18n="brand2">অদাবিকৃত লভ্যাংশ অনুসন্ধান</small></div>
+<header class="hdr">
+  <div class="width">
+    <a class="svc" href="./"><span data-i18n="brand">Unclaimed Dividend Lookup</span><small data-i18n="brand2">অদাবিকৃত লভ্যাংশ অনুসন্ধান</small></a>
+    <ul class="lang" aria-label="Language / ভাষা">
+      <li><button type="button" data-lang="en" lang="en" aria-current="true">English</button></li>
+      <li><button type="button" data-lang="bn" lang="bn" aria-current="false">বাংলা</button></li>
+    </ul>
   </div>
 </header>
 
-<main id="main">
-  <div class="wrap">
-    <section class="hero" aria-labelledby="h1">
-      <h1 id="h1" data-i18n="h1">Find unclaimed dividends and shares</h1>
-      <p class="lead" data-i18n="lead">Search the unclaimed dividend lists published by listed companies and the Capital Market Stabilization Fund (CMSF), using a BO ID or a folio number.</p>
-      <dl class="stats" id="stats" aria-label="Coverage">
-        <div class="stat"><dt data-i18n="st_companies">Companies covered</dt><dd class="sk" id="st-companies">—</dd></div>
-        <div class="stat"><dt data-i18n="st_docs">Source lists</dt><dd class="sk" id="st-docs">—</dd></div>
-        <div class="stat"><dt data-i18n="st_records">Records</dt><dd class="sk" id="st-records">—</dd></div>
-        <div class="stat"><dt data-i18n="st_updated">Data updated</dt><dd class="sk" id="st-updated">—</dd></div>
-      </dl>
-    </section>
+<div class="width">
+  <div class="phase"><p><strong class="tag" data-i18n="tag">PROTOTYPE</strong><span data-i18n="tagline">This is a new service. Figures come from published lists and must be confirmed with the company.</span></p></div>
+</div>
 
-    <section class="card search" id="search" aria-labelledby="search-h" tabindex="-1">
-      <h2 id="search-h" class="sr" data-i18n="search_h">Search</h2>
-      <div class="tabs" role="tablist" aria-labelledby="search-h">
-        <button class="tab" role="tab" id="t-bo" aria-selected="true" aria-controls="p-bo" tabindex="0">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M6 8.5h3M6 11.5h8"/></svg><span data-i18n="tab_bo">BO ID</span></button>
-        <button class="tab" role="tab" id="t-folio" aria-selected="false" aria-controls="p-folio" tabindex="-1">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 2.5h7l3.5 3.5v11.5H5z"/><path d="M8 9.5h5M8 12.5h5"/></svg><span data-i18n="tab_folio">Folio number</span></button>
-      </div>
+<main id="main" tabindex="-1">
+  <div class="width">
+    <div class="intro">
+      <h1 data-i18n="h1">Check for unclaimed dividends</h1>
+      <p class="lead" data-i18n="lead">Search the unclaimed dividend lists that listed companies and the Capital Market Stabilization Fund (CMSF) have published, using a BO ID or a folio number.</p>
+    </div>
 
-      <form id="p-bo" role="tabpanel" aria-labelledby="t-bo" novalidate>
-        <div class="field" id="fld-bo">
+    <div id="errsum" class="err-sum" role="alert" tabindex="-1" hidden></div>
+
+    <div class="tabs" id="search">
+      <h2 class="sr" data-i18n="search_h">Search</h2>
+      <ul class="tablist" role="tablist">
+        <li role="presentation"><button class="tab" role="tab" id="t-bo" aria-selected="true" aria-controls="p-bo" tabindex="0" data-i18n="tab_bo">BO ID</button></li>
+        <li role="presentation"><button class="tab" role="tab" id="t-folio" aria-selected="false" aria-controls="p-folio" tabindex="-1" data-i18n="tab_folio">Folio number</button></li>
+      </ul>
+
+      <form class="panel" id="p-bo" role="tabpanel" aria-labelledby="t-bo" novalidate>
+        <div class="group" id="fld-bo">
           <label for="bo" data-i18n="bo_label">Beneficiary Owner (BO) ID</label>
-          <p class="hint" id="bo-hint" data-i18n="bo_hint">16 digits, as shown on the CDBL or brokerage statement. Spaces and dashes are fine.</p>
-          <p class="err-msg" id="bo-err" hidden></p>
-          <div class="row">
-            <div class="bo-wrap">
-              <input id="bo" name="bo" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="1201 2345 6789 0123" maxlength="40" aria-describedby="bo-hint bo-count">
-              <span class="counter" id="bo-count" aria-live="off">0/16</span>
-            </div>
-            <button class="btn" type="submit"><span class="spin" aria-hidden="true"></span><span class="lbl" data-i18n="search_btn">Search</span></button>
-          </div>
+          <span class="hint" id="bo-hint" data-i18n="bo_hint">The 16-digit number on your CDBL or brokerage statement. You can include spaces.</span>
+          <span class="err-msg" id="bo-err" hidden></span>
+          <input id="bo" name="bo" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="40" aria-describedby="bo-hint bo-count">
+          <span class="count" id="bo-count"></span>
         </div>
+        <button class="btn" type="submit" data-i18n="search_btn">Search</button>
       </form>
 
-      <form id="p-folio" role="tabpanel" aria-labelledby="t-folio" novalidate hidden>
-        <div class="field" id="fld-company">
+      <form class="panel" id="p-folio" role="tabpanel" aria-labelledby="t-folio" novalidate hidden>
+        <div class="group" id="fld-company">
           <label for="company" data-i18n="company_label">Company</label>
-          <p class="hint" id="company-hint" data-i18n="company_hint">Only companies that published folio-number lists are shown.</p>
-          <p class="err-msg" id="company-err" hidden></p>
+          <span class="hint" id="company-hint" data-i18n="company_hint">Only companies that published lists by folio number are shown.</span>
+          <span class="err-msg" id="company-err" hidden></span>
           <select id="company" name="company" aria-describedby="company-hint"><option value="" data-i18n="loading_cos">Loading companies…</option></select>
         </div>
-        <div class="field" id="fld-folio">
+        <div class="group" id="fld-folio">
           <label for="folio" data-i18n="folio_label">Folio number</label>
-          <p class="hint" id="folio-hint" data-i18n="folio_hint">Used on older lists for paper share certificates, e.g. 003155 or B02-398.</p>
-          <p class="err-msg" id="folio-err" hidden></p>
-          <div class="row">
-            <input id="folio" name="folio" autocomplete="off" spellcheck="false" maxlength="40" aria-describedby="folio-hint">
-            <button class="btn" type="submit"><span class="spin" aria-hidden="true"></span><span class="lbl" data-i18n="search_btn">Search</span></button>
-          </div>
+          <span class="hint" id="folio-hint" data-i18n="folio_hint">Used for paper share certificates, for example 003155 or B02-398.</span>
+          <span class="err-msg" id="folio-err" hidden></span>
+          <input id="folio" name="folio" autocomplete="off" spellcheck="false" maxlength="40" aria-describedby="folio-hint">
         </div>
+        <button class="btn" type="submit" data-i18n="search_btn">Search</button>
       </form>
 
-      <div class="field" id="fld-code" hidden style="margin-top:16px">
+      <div class="group" id="fld-code" hidden style="margin-top:25px">
         <label for="code" data-i18n="code_label">Access code</label>
-        <p class="err-msg" id="code-err" hidden></p>
-        <input id="code" type="password" autocomplete="off" style="max-width:320px">
+        <span class="err-msg" id="code-err" hidden></span>
+        <input id="code" type="password" autocomplete="off">
       </div>
-      <div id="status" role="status" aria-live="polite"></div>
-    </section>
+      <p class="muted small" id="coverage" style="margin:15px 0 0"></p>
+    </div>
 
-    <section id="result" aria-live="polite" tabindex="-1"></section>
+    <div id="status" role="status" aria-live="polite"></div>
+    <section id="result" tabindex="-1" aria-live="polite"></section>
 
-    <section class="about" aria-labelledby="about-h">
-      <h2 id="about-h" data-i18n="about_h">About this service</h2>
-      <div class="faq">
-        <details><summary data-i18n="q1">Where does the data come from?</summary><p data-i18n="a1">From unclaimed dividend lists that listed companies and CMSF have published on their websites. Each entry links to the source document and page so it can be checked.</p></details>
-        <details><summary data-i18n="q2">Why is the name partly hidden?</summary><p data-i18n="a2">To protect shareholders' privacy, only the first letter of each word of the name is shown. The full name is in the source document.</p></details>
-        <details><summary data-i18n="q3">What does “Needs check” mean?</summary><p data-i18n="a3">The line in the source document could not be read with certainty, for example on a scanned page. The entry is shown so it is not missed, but it is not added to the totals.</p></details>
-        <details><summary data-i18n="q4">Is my search stored?</summary><p data-i18n="a4">The numbers you search for are not stored. To prevent misuse, the network address and time of each search are kept for up to two days for rate limiting.</p></details>
-        <details><summary data-i18n="q5">Nothing was found. Does that mean nothing is owed?</summary><p data-i18n="a5">No. Some companies publish only folio numbers, some lists could not be read automatically, and some companies have not published a list. Ask the company's share department to be sure.</p></details>
-      </div>
+    <hr class="rule no-print">
+
+    <section class="help" aria-labelledby="help-h">
+      <h2 id="help-h" data-i18n="about_h">Help with this service</h2>
+      <details><summary data-i18n="q1">Where the information comes from</summary><div><p data-i18n="a1">From unclaimed dividend lists that listed companies and CMSF have published on their websites. Each entry links to the source document and page so it can be checked.</p></div></details>
+      <details><summary data-i18n="q5">If nothing is found</summary><div><p data-i18n="a5">That does not mean nothing is owed. Some companies publish only folio numbers, some lists could not be read automatically, and some companies have not published a list. Ask the company's share department to be sure.</p></div></details>
+      <details><summary data-i18n="q3">Entries marked “Check”</summary><div><p data-i18n="a3">The line in the source document could not be read with certainty, for example on a scanned page. The entry is shown so it is not missed, but it is not added to the totals.</p></div></details>
+      <details><summary data-i18n="q2">Why the name is partly hidden</summary><div><p data-i18n="a2">To protect shareholders' privacy, only the first letter of each word of the name is shown. The full name is in the source document.</p></div></details>
+      <details><summary data-i18n="q4">What happens to your search</summary><div><p data-i18n="a4">The numbers you search for are not stored. To prevent misuse, the network address and time of each search are kept for up to two days.</p></div></details>
     </section>
   </div>
 </main>
 
 <footer>
-  <div class="wrap">
-    <p><strong data-i18n="disc_h">Important.</strong> <span data-i18n="disc">This is an independent prototype, not an official government service. Information is compiled from publicly published lists. It may be incomplete or out of date, and amounts may already have been paid. Always confirm with the company or CMSF before relying on any figure.</span></p>
-    <p id="updated"></p>
+  <div class="width">
+    <p data-i18n="disc">This is an independent prototype, not an official government service. Information is compiled from publicly published lists. It may be incomplete or out of date, and amounts may already have been paid. Always confirm with the company or CMSF before relying on any figure.</p>
+    <p class="muted" id="updated"></p>
   </div>
 </footer>
 
@@ -350,65 +307,67 @@ const $ = (id) => document.getElementById(id);
 /* ---------- language ---------- */
 const STR = {
   en: {
-    skip:"Skip to search", tag:"Prototype", tagline:"Figures come from published lists. Confirm with the company before acting on them.",
+    skip:"Skip to main content", tag:"PROTOTYPE", tagline:"This is a new service. Figures come from published lists and must be confirmed with the company.",
     brand:"Unclaimed Dividend Lookup", brand2:"অদাবিকৃত লভ্যাংশ অনুসন্ধান",
-    h1:"Find unclaimed dividends and shares",
-    lead:"Search the unclaimed dividend lists published by listed companies and the Capital Market Stabilization Fund (CMSF), using a BO ID or a folio number.",
-    st_companies:"Companies covered", st_docs:"Source lists", st_records:"Records", st_updated:"Data updated",
+    h1:"Check for unclaimed dividends",
+    lead:"Search the unclaimed dividend lists that listed companies and the Capital Market Stabilization Fund (CMSF) have published, using a BO ID or a folio number.",
+    coverage:"Covers {c} companies and {r} records from {d} published lists. Last updated {u}.",
     search_h:"Search", tab_bo:"BO ID", tab_folio:"Folio number",
-    bo_label:"Beneficiary Owner (BO) ID", bo_hint:"16 digits, as shown on the CDBL or brokerage statement. Spaces and dashes are fine.",
-    search_btn:"Search", searching:"Searching…",
-    company_label:"Company", company_hint:"Only companies that published folio-number lists are shown.",
-    loading_cos:"Loading companies…", choose_co:"Choose a company", cos_unavailable:"Company list unavailable — reload the page",
-    folio_label:"Folio number", folio_hint:"Used on older lists for paper share certificates, e.g. 003155 or B02-398.",
+    bo_label:"Beneficiary Owner (BO) ID", bo_hint:"The 16-digit number on your CDBL or brokerage statement. You can include spaces.",
+    count:"{n} of 16 digits", search_btn:"Search", searching:"Searching…",
+    company_label:"Company", company_hint:"Only companies that published lists by folio number are shown.",
+    loading_cos:"Loading companies…", choose_co:"Select a company", cos_unavailable:"Company list unavailable – reload the page",
+    folio_label:"Folio number", folio_hint:"Used for paper share certificates, for example 003155 or B02-398.",
     code_label:"Access code",
-    e_bo_empty:"Enter a BO ID", e_bo_len:"Enter all 16 digits of the BO ID — you entered {n}", e_bo_srv:"A BO ID has exactly 16 digits",
-    e_company:"Choose a company", e_folio:"Enter a folio number", e_code:"Enter a valid access code",
-    locked:"Too many unsuccessful searches from this network. Please try again in an hour.",
-    rate_limited:"Too many searches in a short time. Wait a minute, then try again.",
-    daily_cap:"The daily search limit has been reached. Please try again tomorrow.",
+    err_title:"There is a problem",
+    e_bo_empty:"Enter a BO ID", e_bo_len:"BO ID must be 16 digits – you entered {n}", e_bo_srv:"BO ID must be 16 digits",
+    e_company:"Select a company", e_folio:"Enter a folio number", e_code:"Enter a valid access code",
+    locked:"There have been too many unsuccessful searches from this network. Try again in an hour.",
+    rate_limited:"There have been too many searches in a short time. Wait a minute, then try again.",
+    daily_cap:"The daily search limit has been reached. Try again tomorrow.",
     network:"The search could not be completed. Check your internet connection and try again.",
-    timeout:"The service is taking too long to respond. Please try again.",
+    timeout:"The service is taking too long to respond. Try again.",
     retry:"Try again",
-    res_eyebrow:"Search result", holder:"Name on the list", masked:"Partly hidden for privacy", no_name:"Name not shown in the lists",
-    searched_for:"Searched for", searched_at:"Searched on",
-    t_cash:"Unclaimed cash", t_cash_s:"Dividends, fractions and refunds", t_shares:"Bonus and right shares", t_shares_s:"Number of shares",
-    t_cos:"Companies", t_cos_s:"With at least one entry", t_check:"Entries to check", t_check_s:"Not added to totals",
-    uv_note:"{n} of {t} entries could not be read with certainty from the source document. They are listed below and marked “Needs check”, but are not added to the totals.",
+    results_h:"Results for {id}", holder:"Name on the list", masked:"(partly hidden for privacy)", no_name:"Not shown in the lists",
+    t_cash:"Unclaimed cash", t_cash_s:"Dividends, fractional dividends and refunds", t_shares:"Bonus and right shares", t_cos:"Companies", t_check:"Entries to check", searched_at:"Searched on",
+    uv_note:"{n} of {t} entries could not be read with certainty from the source document. They are marked “Check” and are not included in the totals above.",
+    by_co:"Entries by company", n_cos:"{n} companies", show_all:"Show all sections", hide_all:"Hide all sections", show:"Show", hide:"Hide",
     h_year:"Year", h_type:"Type", h_amount:"Amount", h_source:"Source",
     cash:"Cash dividend", stock:"Bonus shares", fraction:"Fractional dividend", right:"Right shares", ipo_refund:"IPO refund", other:"Other",
-    needs_check:"Needs check", n_shares:"{n} shares", src:"List {d}", src_p:"List {d}, p. {p}", n_entries:"{n} entries", n_entry:"1 entry",
-    c_cash:"Cash", c_shares:"Shares", opens_new:"(opens in a new tab)",
-    expand:"Expand all", collapse:"Collapse all", print:"Print or save PDF", new_search:"New search",
+    check:"Check", n_shares:"{n} shares", src:"List {d}", src_p:"List {d}, page {p}", n_entries:"{n} entries", n_entry:"1 entry",
+    co_meta:"{e} · cash {c} · {s} shares", opens_new:"(opens in new tab)",
+    print:"Print this page", new_search:"Start a new search",
     how_h:"How to claim",
-    how1:"Contact the company's share department. Quote the BO ID or folio number and the list shown above.",
-    how2:"Keep ready: the BO statement or share certificate, national ID card, and bank account details.",
-    how3:"If the company has already transferred the amount to the Capital Market Stabilization Fund, apply to CMSF instead:",
-    nf_h:"No entries found", nf_p:"{id} does not appear in the lists held here. That does not prove nothing is owed:",
-    nf1:"some companies publish folio numbers only — try the Folio number tab", nf2:"some lists could not be read automatically", nf3:"some companies have not published a list",
-    about_h:"About this service",
-    q1:"Where does the data come from?", a1:"From unclaimed dividend lists that listed companies and CMSF have published on their websites. Each entry links to the source document and page so it can be checked.",
-    q2:"Why is the name partly hidden?", a2:"To protect shareholders' privacy, only the first letter of each word of the name is shown. The full name is in the source document.",
-    q3:"What does “Needs check” mean?", a3:"The line in the source document could not be read with certainty, for example on a scanned page. The entry is shown so it is not missed, but it is not added to the totals.",
-    q4:"Is my search stored?", a4:"The numbers you search for are not stored. To prevent misuse, the network address and time of each search are kept for up to two days for rate limiting.",
-    q5:"Nothing was found. Does that mean nothing is owed?", a5:"No. Some companies publish only folio numbers, some lists could not be read automatically, and some companies have not published a list. Ask the company's share department to be sure.",
-    disc_h:"Important.", disc:"This is an independent prototype, not an official government service. Information is compiled from publicly published lists. It may be incomplete or out of date, and amounts may already have been paid. Always confirm with the company or CMSF before relying on any figure.",
-    updated:"Data last updated {d}.", print_h:"Unclaimed Dividend Lookup — search result", printed:"Printed {d}"
+    how1:"Contact the company's share department. Give them the BO ID or folio number and the list shown above.",
+    how2:"Have ready the BO statement or share certificate, your national ID card and your bank account details.",
+    how3:"If the company has already transferred the amount to the Capital Market Stabilization Fund, apply to CMSF at",
+    nf_h:"No entries found for {id}", nf_p:"This does not mean nothing is owed. It may be that:",
+    nf1:"the company published folio numbers only – try searching by folio number", nf2:"the company's list could not be read automatically", nf3:"the company has not published a list",
+    nf4:"To be sure, contact the company's share department.",
+    about_h:"Help with this service",
+    q1:"Where the information comes from", a1:"From unclaimed dividend lists that listed companies and CMSF have published on their websites. Each entry links to the source document and page so it can be checked.",
+    q2:"Why the name is partly hidden", a2:"To protect shareholders' privacy, only the first letter of each word of the name is shown. The full name is in the source document.",
+    q3:"Entries marked “Check”", a3:"The line in the source document could not be read with certainty, for example on a scanned page. The entry is shown so it is not missed, but it is not added to the totals.",
+    q4:"What happens to your search", a4:"The numbers you search for are not stored. To prevent misuse, the network address and time of each search are kept for up to two days.",
+    q5:"If nothing is found", a5:"That does not mean nothing is owed. Some companies publish only folio numbers, some lists could not be read automatically, and some companies have not published a list. Ask the company's share department to be sure.",
+    disc:"This is an independent prototype, not an official government service. Information is compiled from publicly published lists. It may be incomplete or out of date, and amounts may already have been paid. Always confirm with the company or CMSF before relying on any figure.",
+    updated:"Data last updated {d}.", print_h:"Unclaimed Dividend Lookup", printed:"Printed {d}"
   },
   bn: {
-    skip:"অনুসন্ধানে যান", tag:"প্রোটোটাইপ", tagline:"তথ্যগুলো প্রকাশিত তালিকা থেকে নেওয়া। পদক্ষেপ নেওয়ার আগে কোম্পানির সাথে যাচাই করুন।",
+    skip:"মূল অংশে যান", tag:"প্রোটোটাইপ", tagline:"এটি একটি নতুন সেবা। তথ্যগুলো প্রকাশিত তালিকা থেকে নেওয়া; কোম্পানির সাথে যাচাই করে নিন।",
     brand:"অদাবিকৃত লভ্যাংশ অনুসন্ধান", brand2:"Unclaimed Dividend Lookup",
-    h1:"অদাবিকৃত লভ্যাংশ ও শেয়ার খুঁজুন",
+    h1:"অদাবিকৃত লভ্যাংশ খুঁজুন",
     lead:"তালিকাভুক্ত কোম্পানি ও ক্যাপিটাল মার্কেট স্ট্যাবিলাইজেশন ফান্ড (সিএমএসএফ) প্রকাশিত অদাবিকৃত লভ্যাংশের তালিকায় বিও আইডি বা ফোলিও নম্বর দিয়ে খুঁজুন।",
-    st_companies:"অন্তর্ভুক্ত কোম্পানি", st_docs:"উৎস তালিকা", st_records:"রেকর্ড", st_updated:"হালনাগাদ",
+    coverage:"{d}টি প্রকাশিত তালিকা থেকে {c}টি কোম্পানির {r} রেকর্ড অন্তর্ভুক্ত। সর্বশেষ হালনাগাদ {u}।",
     search_h:"অনুসন্ধান", tab_bo:"বিও আইডি", tab_folio:"ফোলিও নম্বর",
-    bo_label:"বেনিফিশিয়ারি ওনার (বিও) আইডি", bo_hint:"সিডিবিএল বা ব্রোকারেজ স্টেটমেন্টে থাকা ১৬ সংখ্যার নম্বর। স্পেস বা ড্যাশ দিলেও চলবে।",
-    search_btn:"অনুসন্ধান করুন", searching:"অনুসন্ধান চলছে…",
-    company_label:"কোম্পানি", company_hint:"যেসব কোম্পানি ফোলিও নম্বরের তালিকা প্রকাশ করেছে শুধু সেগুলো দেখানো হচ্ছে।",
-    loading_cos:"কোম্পানির তালিকা আসছে…", choose_co:"কোম্পানি নির্বাচন করুন", cos_unavailable:"কোম্পানির তালিকা পাওয়া যায়নি — পেজটি আবার লোড করুন",
-    folio_label:"ফোলিও নম্বর", folio_hint:"কাগুজে শেয়ার সার্টিফিকেটের পুরোনো তালিকায় ব্যবহৃত হয়, যেমন 003155 বা B02-398।",
+    bo_label:"বেনিফিশিয়ারি ওনার (বিও) আইডি", bo_hint:"সিডিবিএল বা ব্রোকারেজ স্টেটমেন্টে থাকা ১৬ সংখ্যার নম্বর। স্পেস দিলেও চলবে।",
+    count:"১৬টির মধ্যে {n}টি সংখ্যা", search_btn:"অনুসন্ধান করুন", searching:"অনুসন্ধান চলছে…",
+    company_label:"কোম্পানি", company_hint:"যেসব কোম্পানি ফোলিও নম্বরসহ তালিকা প্রকাশ করেছে শুধু সেগুলো দেখানো হচ্ছে।",
+    loading_cos:"কোম্পানির তালিকা আসছে…", choose_co:"কোম্পানি নির্বাচন করুন", cos_unavailable:"কোম্পানির তালিকা পাওয়া যায়নি – পেজটি আবার লোড করুন",
+    folio_label:"ফোলিও নম্বর", folio_hint:"কাগুজে শেয়ার সার্টিফিকেটের জন্য ব্যবহৃত, যেমন 003155 বা B02-398।",
     code_label:"অ্যাক্সেস কোড",
-    e_bo_empty:"বিও আইডি লিখুন", e_bo_len:"বিও আইডির ১৬টি সংখ্যাই লিখুন — আপনি {n}টি লিখেছেন", e_bo_srv:"বিও আইডিতে ঠিক ১৬টি সংখ্যা থাকে",
+    err_title:"একটি সমস্যা হয়েছে",
+    e_bo_empty:"বিও আইডি লিখুন", e_bo_len:"বিও আইডি ১৬ সংখ্যার হতে হবে – আপনি {n}টি লিখেছেন", e_bo_srv:"বিও আইডি ১৬ সংখ্যার হতে হবে",
     e_company:"একটি কোম্পানি নির্বাচন করুন", e_folio:"ফোলিও নম্বর লিখুন", e_code:"সঠিক অ্যাক্সেস কোড দিন",
     locked:"এই নেটওয়ার্ক থেকে অনেকবার ব্যর্থ অনুসন্ধান হয়েছে। এক ঘণ্টা পরে আবার চেষ্টা করুন।",
     rate_limited:"অল্প সময়ে অনেক বেশি অনুসন্ধান হয়েছে। এক মিনিট অপেক্ষা করে আবার চেষ্টা করুন।",
@@ -416,30 +375,30 @@ const STR = {
     network:"অনুসন্ধান সম্পন্ন করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।",
     timeout:"সার্ভিস সাড়া দিতে বেশি সময় নিচ্ছে। আবার চেষ্টা করুন।",
     retry:"আবার চেষ্টা করুন",
-    res_eyebrow:"অনুসন্ধানের ফলাফল", holder:"তালিকায় থাকা নাম", masked:"গোপনীয়তার জন্য আংশিক লুকানো", no_name:"তালিকায় নাম দেখানো নেই",
-    searched_for:"যা খোঁজা হয়েছে", searched_at:"অনুসন্ধানের সময়",
-    t_cash:"অদাবিকৃত নগদ", t_cash_s:"লভ্যাংশ, ভগ্নাংশ ও ফেরত", t_shares:"বোনাস ও রাইট শেয়ার", t_shares_s:"শেয়ারের সংখ্যা",
-    t_cos:"কোম্পানি", t_cos_s:"অন্তত একটি এন্ট্রি আছে", t_check:"যাচাই প্রয়োজন", t_check_s:"মোট হিসাবে ধরা হয়নি",
-    uv_note:"{t}টি এন্ট্রির মধ্যে {n}টি উৎস নথি থেকে নিশ্চিতভাবে পড়া যায়নি। এগুলো নিচে “যাচাই প্রয়োজন” চিহ্নসহ দেখানো হয়েছে, তবে মোট হিসাবে যোগ করা হয়নি।",
+    results_h:"{id} এর ফলাফল", holder:"তালিকায় থাকা নাম", masked:"(গোপনীয়তার জন্য আংশিক লুকানো)", no_name:"তালিকায় নাম নেই",
+    t_cash:"অদাবিকৃত নগদ", t_cash_s:"লভ্যাংশ, ভগ্নাংশ লভ্যাংশ ও ফেরত", t_shares:"বোনাস ও রাইট শেয়ার", t_cos:"কোম্পানি", t_check:"যাচাই প্রয়োজন এমন এন্ট্রি", searched_at:"অনুসন্ধানের সময়",
+    uv_note:"{t}টি এন্ট্রির মধ্যে {n}টি উৎস নথি থেকে নিশ্চিতভাবে পড়া যায়নি। এগুলো “যাচাই” চিহ্নিত এবং উপরের মোট হিসাবে ধরা হয়নি।",
+    by_co:"কোম্পানি অনুযায়ী এন্ট্রি", n_cos:"{n}টি কোম্পানি", show_all:"সব অংশ দেখুন", hide_all:"সব অংশ লুকান", show:"দেখুন", hide:"লুকান",
     h_year:"বছর", h_type:"ধরন", h_amount:"পরিমাণ", h_source:"উৎস",
     cash:"নগদ লভ্যাংশ", stock:"বোনাস শেয়ার", fraction:"ভগ্নাংশ লভ্যাংশ", right:"রাইট শেয়ার", ipo_refund:"আইপিও ফেরত", other:"অন্যান্য",
-    needs_check:"যাচাই প্রয়োজন", n_shares:"{n}টি শেয়ার", src:"তালিকা {d}", src_p:"তালিকা {d}, পৃ. {p}", n_entries:"{n}টি এন্ট্রি", n_entry:"১টি এন্ট্রি",
-    c_cash:"নগদ", c_shares:"শেয়ার", opens_new:"(নতুন ট্যাবে খুলবে)",
-    expand:"সব খুলুন", collapse:"সব বন্ধ করুন", print:"প্রিন্ট বা পিডিএফ", new_search:"নতুন অনুসন্ধান",
+    check:"যাচাই", n_shares:"{n}টি শেয়ার", src:"তালিকা {d}", src_p:"তালিকা {d}, পৃষ্ঠা {p}", n_entries:"{n}টি এন্ট্রি", n_entry:"১টি এন্ট্রি",
+    co_meta:"{e} · নগদ {c} · {s}টি শেয়ার", opens_new:"(নতুন ট্যাবে খুলবে)",
+    print:"পেজটি প্রিন্ট করুন", new_search:"নতুন অনুসন্ধান করুন",
     how_h:"কীভাবে দাবি করবেন",
     how1:"কোম্পানির শেয়ার বিভাগে যোগাযোগ করুন। বিও আইডি বা ফোলিও নম্বর এবং উপরের তালিকার তথ্য জানান।",
-    how2:"প্রস্তুত রাখুন: বিও স্টেটমেন্ট বা শেয়ার সার্টিফিকেট, জাতীয় পরিচয়পত্র এবং ব্যাংক হিসাবের তথ্য।",
+    how2:"বিও স্টেটমেন্ট বা শেয়ার সার্টিফিকেট, জাতীয় পরিচয়পত্র এবং ব্যাংক হিসাবের তথ্য প্রস্তুত রাখুন।",
     how3:"কোম্পানি অর্থ ইতোমধ্যে ক্যাপিটাল মার্কেট স্ট্যাবিলাইজেশন ফান্ডে স্থানান্তর করে থাকলে সিএমএসএফে আবেদন করুন:",
-    nf_h:"কোনো এন্ট্রি পাওয়া যায়নি", nf_p:"এখানে থাকা তালিকায় {id} পাওয়া যায়নি। তবে এর মানে এই নয় যে কোনো পাওনা নেই:",
-    nf1:"কিছু কোম্পানি শুধু ফোলিও নম্বর প্রকাশ করে — “ফোলিও নম্বর” ট্যাবে চেষ্টা করুন", nf2:"কিছু তালিকা স্বয়ংক্রিয়ভাবে পড়া যায়নি", nf3:"কিছু কোম্পানি এখনো তালিকা প্রকাশ করেনি",
-    about_h:"এই সেবা সম্পর্কে",
-    q1:"তথ্য কোথা থেকে আসে?", a1:"তালিকাভুক্ত কোম্পানি ও সিএমএসএফ তাদের ওয়েবসাইটে যে অদাবিকৃত লভ্যাংশের তালিকা প্রকাশ করেছে, সেখান থেকে। যাচাইয়ের জন্য প্রতিটি এন্ট্রির সাথে উৎস নথি ও পৃষ্ঠার লিংক দেওয়া আছে।",
-    q2:"নাম কেন আংশিক লুকানো?", a2:"শেয়ারহোল্ডারের গোপনীয়তা রক্ষায় নামের প্রতিটি শব্দের শুধু প্রথম অক্ষর দেখানো হয়। পূর্ণ নাম উৎস নথিতে আছে।",
-    q3:"“যাচাই প্রয়োজন” মানে কী?", a3:"উৎস নথির লাইনটি নিশ্চিতভাবে পড়া যায়নি, যেমন স্ক্যান করা পৃষ্ঠায়। এন্ট্রিটি যেন বাদ না পড়ে তাই দেখানো হয়েছে, তবে মোট হিসাবে যোগ করা হয়নি।",
-    q4:"আমার অনুসন্ধান কি সংরক্ষিত হয়?", a4:"আপনি যে নম্বর খোঁজেন তা সংরক্ষণ করা হয় না। অপব্যবহার রোধে প্রতিটি অনুসন্ধানের নেটওয়ার্ক ঠিকানা ও সময় সর্বোচ্চ দুই দিন রাখা হয়।",
-    q5:"কিছু পাওয়া যায়নি। তার মানে কি কোনো পাওনা নেই?", a5:"না। কিছু কোম্পানি শুধু ফোলিও নম্বর প্রকাশ করে, কিছু তালিকা স্বয়ংক্রিয়ভাবে পড়া যায়নি, আর কিছু কোম্পানি তালিকা প্রকাশ করেনি। নিশ্চিত হতে কোম্পানির শেয়ার বিভাগে জিজ্ঞাসা করুন।",
-    disc_h:"গুরুত্বপূর্ণ।", disc:"এটি একটি স্বতন্ত্র প্রোটোটাইপ, কোনো সরকারি সেবা নয়। তথ্যগুলো প্রকাশ্যে প্রকাশিত তালিকা থেকে সংকলিত; এগুলো অসম্পূর্ণ বা পুরোনো হতে পারে এবং অর্থ ইতোমধ্যে পরিশোধ হয়ে থাকতে পারে। কোনো তথ্যের ওপর নির্ভর করার আগে কোম্পানি বা সিএমএসএফের সাথে যাচাই করুন।",
-    updated:"সর্বশেষ হালনাগাদ {d}।", print_h:"অদাবিকৃত লভ্যাংশ অনুসন্ধান — ফলাফল", printed:"প্রিন্টের সময় {d}"
+    nf_h:"{id} এর জন্য কোনো এন্ট্রি পাওয়া যায়নি", nf_p:"এর মানে এই নয় যে কোনো পাওনা নেই। হতে পারে:",
+    nf1:"কোম্পানি শুধু ফোলিও নম্বর প্রকাশ করেছে – ফোলিও নম্বর দিয়ে খুঁজে দেখুন", nf2:"কোম্পানির তালিকা স্বয়ংক্রিয়ভাবে পড়া যায়নি", nf3:"কোম্পানি তালিকা প্রকাশ করেনি",
+    nf4:"নিশ্চিত হতে কোম্পানির শেয়ার বিভাগে যোগাযোগ করুন।",
+    about_h:"এই সেবা সম্পর্কে সহায়তা",
+    q1:"তথ্য কোথা থেকে আসে", a1:"তালিকাভুক্ত কোম্পানি ও সিএমএসএফ তাদের ওয়েবসাইটে যে অদাবিকৃত লভ্যাংশের তালিকা প্রকাশ করেছে, সেখান থেকে। যাচাইয়ের জন্য প্রতিটি এন্ট্রির সাথে উৎস নথি ও পৃষ্ঠার লিংক দেওয়া আছে।",
+    q2:"নাম কেন আংশিক লুকানো", a2:"শেয়ারহোল্ডারের গোপনীয়তা রক্ষায় নামের প্রতিটি শব্দের শুধু প্রথম অক্ষর দেখানো হয়। পূর্ণ নাম উৎস নথিতে আছে।",
+    q3:"“যাচাই” চিহ্নিত এন্ট্রি", a3:"উৎস নথির লাইনটি নিশ্চিতভাবে পড়া যায়নি, যেমন স্ক্যান করা পৃষ্ঠায়। এন্ট্রিটি যেন বাদ না পড়ে তাই দেখানো হয়েছে, তবে মোট হিসাবে যোগ করা হয়নি।",
+    q4:"আপনার অনুসন্ধানের তথ্য", a4:"আপনি যে নম্বর খোঁজেন তা সংরক্ষণ করা হয় না। অপব্যবহার রোধে প্রতিটি অনুসন্ধানের নেটওয়ার্ক ঠিকানা ও সময় সর্বোচ্চ দুই দিন রাখা হয়।",
+    q5:"কিছু পাওয়া না গেলে", a5:"এর মানে এই নয় যে কোনো পাওনা নেই। কিছু কোম্পানি শুধু ফোলিও নম্বর প্রকাশ করে, কিছু তালিকা স্বয়ংক্রিয়ভাবে পড়া যায়নি, আর কিছু কোম্পানি তালিকা প্রকাশ করেনি। নিশ্চিত হতে কোম্পানির শেয়ার বিভাগে জিজ্ঞাসা করুন।",
+    disc:"এটি একটি স্বতন্ত্র প্রোটোটাইপ, কোনো সরকারি সেবা নয়। তথ্যগুলো প্রকাশ্যে প্রকাশিত তালিকা থেকে সংকলিত; এগুলো অসম্পূর্ণ বা পুরোনো হতে পারে এবং অর্থ ইতোমধ্যে পরিশোধ হয়ে থাকতে পারে। কোনো তথ্যের ওপর নির্ভর করার আগে কোম্পানি বা সিএমএসএফের সাথে যাচাই করুন।",
+    updated:"সর্বশেষ হালনাগাদ {d}।", print_h:"অদাবিকৃত লভ্যাংশ অনুসন্ধান", printed:"প্রিন্টের সময় {d}"
   }
 };
 let lang = "en";
@@ -452,11 +411,6 @@ function t(k, v) {
 const loc = () => (lang === "bn" ? "bn-BD" : "en-IN");
 const num = (n, d = 0) => new Intl.NumberFormat(loc(), {minimumFractionDigits: d, maximumFractionDigits: d}).format(Number(n) || 0);
 const money = (n) => "৳ " + num(n, 2);
-function bigCount(n) {
-  n = Number(n) || 0;
-  if (n >= 1e5) return num(n / 1e5, 1) + (lang === "bn" ? " লাখ" : " lakh");
-  return num(n);
-}
 function fmtDate(iso, withTime) {
   const d = typeof iso === "string" ? new Date(iso + (iso.length === 10 ? "T00:00:00" : "")) : iso;
   if (isNaN(d)) return String(iso);
@@ -465,7 +419,7 @@ function fmtDate(iso, withTime) {
   return new Intl.DateTimeFormat(lang === "bn" ? "bn-BD" : "en-GB", o).format(d);
 }
 
-/* ---------- small DOM helper (text only: never innerHTML with data) ---------- */
+/* ---------- DOM helper (text only, never innerHTML with data) ---------- */
 function el(tag, attrs, ...kids) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
@@ -475,34 +429,21 @@ function el(tag, attrs, ...kids) {
   for (const c of kids) if (c != null && c !== false) n.append(c);
   return n;
 }
-const NS = "http://www.w3.org/2000/svg";
-function icon(path, vb = "0 0 20 20") {
-  const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", vb); s.setAttribute("aria-hidden", "true");
-  s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "1.8");
-  s.setAttribute("stroke-linecap", "round"); s.setAttribute("stroke-linejoin", "round");
-  for (const d of [].concat(path)) { const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); s.append(p); }
-  return s;
-}
-const I = {
-  err: ["M10 2.5 18 17H2z", "M10 8v4", "M10 14.5v.01"],
-  info: ["M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16z", "M10 9v5", "M10 6.5v.01"],
-  chev: ["M5 7.5l5 5 5-5"],
-  ext: ["M11 3h6v6", "M17 3l-8 8", "M15 12v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4"],
-  print: ["M5 8V3h10v5", "M5 14H3V9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v5h-2", "M5 12h10v6H5z"],
-  open: ["M4 7l6 6 6-6", "M4 3h12"], close: ["M4 13l6-6 6 6", "M4 17h12"], back: ["M15 10H5", "M9 6l-4 4 4 4"]
-};
 
 /* ---------- static text ---------- */
 function applyLang() {
   document.documentElement.lang = lang;
   document.title = t("brand");
   for (const n of document.querySelectorAll("[data-i18n]")) n.textContent = t(n.dataset.i18n);
-  for (const b of document.querySelectorAll(".lang button")) b.setAttribute("aria-pressed", String(b.dataset.lang === lang));
-  renderStats(); renderCompanies(); refreshCounter();
-  for (const k of Object.keys(errs)) if (errs[k]) showFieldErr(k, errs[k][0], errs[k][1]);
+  for (const b of document.querySelectorAll(".lang button")) b.setAttribute("aria-current", String(b.dataset.lang === lang));
+  renderCoverage(); renderCompanies(); refreshCounter();
+  for (const k of Object.keys(errs)) showFieldErr(k, errs[k][0], errs[k][1]);
+  if (!$("errsum").hidden) renderErrSum(false);
+  if (busyForm) setBusyLabel(busyForm, true);
   if (last) last.redraw();
 }
 for (const b of document.querySelectorAll(".lang button")) b.addEventListener("click", () => {
+  if (lang === b.dataset.lang) return;
   lang = b.dataset.lang; try { localStorage.setItem("lang", lang); } catch (_) {}
   applyLang();
 });
@@ -531,12 +472,10 @@ async function rpc(name, body, signal) {
 
 /* ---------- coverage + companies ---------- */
 let info = null, companies = null;
-function renderStats() {
+function renderCoverage() {
   const s = info && info.stats;
-  const set = (id, v) => { const n = $(id); if (v == null) return; n.textContent = v; n.classList.remove("sk"); };
-  if (s) { set("st-companies", num(s.companies)); set("st-docs", num(s.documents)); set("st-records", bigCount(s.records)); }
-  if (info && info.updated) { set("st-updated", fmtDate(info.updated)); $("updated").textContent = t("updated", {d: fmtDate(info.updated)}); }
-  if (info && !s) $("stats").hidden = true;
+  $("coverage").textContent = s && info.updated ? t("coverage", {c: num(s.companies), r: num(s.records), d: num(s.documents), u: fmtDate(info.updated)}) : "";
+  $("updated").textContent = info && info.updated ? t("updated", {d: fmtDate(info.updated)}) : "";
 }
 function renderCompanies() {
   const sel = $("company"), keep = sel.value;
@@ -546,7 +485,7 @@ function renderCompanies() {
   sel.value = keep;
 }
 
-/* ---------- tabs (WAI-ARIA tabs pattern, roving tabindex) ---------- */
+/* ---------- tabs (WAI-ARIA, roving tabindex) ---------- */
 const TABS = [$("t-bo"), $("t-folio")];
 function selectTab(tab, focus) {
   for (const x of TABS) {
@@ -572,7 +511,7 @@ const boDigits = (s) => toAscii(s).replace(/\D/g, "").slice(0, 16);
 const group4 = (d) => d.replace(/(\d{4})(?=\d)/g, "$1 ");
 function refreshCounter() {
   const n = boDigits($("bo").value).length, c = $("bo-count");
-  c.textContent = num(n) + "/" + num(16); c.classList.toggle("ok", n === 16);
+  c.textContent = n ? t("count", {n: num(n)}) : ""; c.classList.toggle("ok", n === 16);
 }
 $("bo").addEventListener("input", (e) => {
   const inp = e.target, pos = inp.selectionStart ?? inp.value.length;
@@ -585,16 +524,13 @@ $("bo").addEventListener("input", (e) => {
     try { inp.setSelectionRange(p, p); } catch (_) {}
   }
   refreshCounter();
-  if (errs.bo && d.length === 16) clearFieldErr("bo");
 });
-$("folio").addEventListener("input", () => { if (errs.folio) clearFieldErr("folio"); });
-$("company").addEventListener("change", () => { if (errs.company) clearFieldErr("company"); });
 
-/* ---------- field errors ---------- */
+/* ---------- errors: inline message + summary at top (GOV.UK pattern) ---------- */
 const errs = {};
 function showFieldErr(k, key, vars) {
   errs[k] = [key, vars];
-  const m = $(k + "-err"); m.replaceChildren(el("span", {class: "sr", text: lang === "bn" ? "ত্রুটি:" : "Error:"}), document.createTextNode(t(key, vars)));
+  const m = $(k + "-err"); m.replaceChildren(el("span", {class: "sr", text: lang === "bn" ? "ত্রুটি: " : "Error: "}), document.createTextNode(t(key, vars)));
   m.hidden = false; $("fld-" + k).classList.add("has-err");
   const inp = $(k); inp.setAttribute("aria-invalid", "true");
   const d = (inp.getAttribute("aria-describedby") || "").split(" ").filter((x) => x && x !== k + "-err");
@@ -607,129 +543,137 @@ function clearFieldErr(k) {
   const inp = $(k); inp.removeAttribute("aria-invalid");
   inp.setAttribute("aria-describedby", (inp.getAttribute("aria-describedby") || "").split(" ").filter((x) => x && x !== k + "-err").join(" "));
 }
-function clearAllErr() { for (const k of Object.keys(errs)) clearFieldErr(k); }
+function clearAllErr() { for (const k of Object.keys(errs)) clearFieldErr(k); hideErrSum(); last = null; $("result").replaceChildren(); }
+let sumMsg = null;
+function renderErrSum(focus, message, retry) {
+  if (message !== undefined) sumMsg = message ? [message, retry] : null;
+  const box = $("errsum"), keys = Object.keys(errs);
+  if (!keys.length && !sumMsg) return hideErrSum();
+  const body = [el("h2", {text: t("err_title")})];
+  if (keys.length) body.push(el("ul", {}, ...keys.map((k) => {
+    const a = el("a", {href: "#" + k, text: t(errs[k][0], errs[k][1])});
+    a.onclick = (e) => { e.preventDefault(); $(k).focus(); $("fld-" + k).scrollIntoView({block: "center"}); };
+    return el("li", {}, a);
+  })));
+  if (sumMsg) {
+    body.push(el("p", {text: t(sumMsg[0])}));
+    if (sumMsg[1]) { const b = el("button", {class: "linkbtn", type: "button", text: t("retry")}); b.onclick = sumMsg[1]; body.push(el("p", {}, b)); }
+  }
+  box.replaceChildren(...body); box.hidden = false;
+  if (focus) { box.focus({preventScroll: true}); box.scrollIntoView({block: "start"}); }
+}
+function hideErrSum() { sumMsg = null; $("errsum").hidden = true; $("errsum").replaceChildren(); }
 
-/* ---------- status + busy ---------- */
-function notice(kind, text, retry) {
-  const ic = icon(kind === "err" ? I.err : I.info);
-  const body = el("div", {}, el("p", {text}));
-  if (retry) { const b = el("button", {class: "btn-2", type: "button"}, t("retry")); b.onclick = retry; body.append(b); }
-  return el("div", {class: "notice " + kind}, ic, body);
-}
-function setStatus(kind, text, retry) { $("status").replaceChildren(text ? notice(kind, text, retry) : ""); }
+/* ---------- busy ---------- */
+let busyForm = null;
+function setBusyLabel(form, on) { form.querySelector(".btn").textContent = t(on ? "searching" : "search_btn"); }
 function busy(form, on) {
-  const b = form.querySelector(".btn");
-  b.setAttribute("aria-disabled", on ? "true" : "false");
-  b.querySelector(".lbl").textContent = t(on ? "searching" : "search_btn");
+  busyForm = on ? form : null;
+  form.querySelector(".btn").setAttribute("aria-disabled", on ? "true" : "false");
+  setBusyLabel(form, on);
   $("result").setAttribute("aria-busy", on ? "true" : "false");
-}
-function skeleton() {
-  $("result").replaceChildren(el("div", {class: "card", style: "padding:24px", "aria-hidden": "true"},
-    el("div", {class: "sk-block", style: "width:30%"}), el("div", {class: "sk-block", style: "width:55%;height:22px"}),
-    el("div", {class: "sk-block", style: "height:70px;margin-top:18px"}), el("div", {class: "sk-block", style: "height:48px"}), el("div", {class: "sk-block", style: "height:48px"})));
+  $("status").textContent = on ? t("searching") : "";
 }
 
 /* ---------- results ---------- */
 let last = null;
 const SHARE_TYPES = new Set(["stock", "right"]);
-const typeLabel = (x) => t(STR.en[x] && ["cash", "stock", "fraction", "right", "ipo_refund"].includes(x) ? x : "other");
+const TYPES = new Set(["cash", "stock", "fraction", "right", "ipo_refund"]);
+const typeLabel = (x) => t(TYPES.has(x) ? x : "other");
 const isHttp = (u) => typeof u === "string" && /^https?:\/\//i.test(u);
+const row = (k, ...v) => el("div", {class: "row"}, el("dt", {text: k}), el("dd", {}, ...v));
 
-function tile(k, v, s, primary) {
-  return el("div", {class: "tile" + (primary ? " primary" : "")}, el("div", {class: "k", text: k}), el("div", {class: "v", text: v}), s ? el("div", {class: "s", text: s}) : null);
+function companyTable(c) {
+  const rows = c.items.map((it) => {
+    const sh = SHARE_TYPES.has(it.type);
+    const amt = sh ? (it.shares == null ? "–" : t("n_shares", {n: num(it.shares)})) : (it.net == null ? "–" : money(it.net));
+    const label = it.page ? t("src_p", {d: it.doc || "", p: num(it.page)}) : t("src", {d: it.doc || ""});
+    const src = isHttp(it.url)
+      ? el("a", {href: it.url, target: "_blank", rel: "noopener noreferrer", title: it.doc_title || null}, label, el("span", {class: "sr", text: " " + t("opens_new")}))
+      : document.createTextNode(label);
+    return el("tr", {},
+      el("td", {text: it.year || "–"}),
+      el("td", {}, typeLabel(it.type), it.verified ? null : el("strong", {class: "chk", text: t("check")})),
+      el("td", {class: "num" + (it.verified ? "" : " uv"), text: amt}),
+      el("td", {}, src));
+  });
+  return el("div", {class: "scroll"}, el("table", {},
+    el("caption", {class: "sr", text: c.company}),
+    el("thead", {}, el("tr", {}, el("th", {scope: "col", text: t("h_year")}), el("th", {scope: "col", text: t("h_type")}), el("th", {scope: "col", class: "num", text: t("h_amount")}), el("th", {scope: "col", text: t("h_source")}))),
+    el("tbody", {}, ...rows)));
 }
+
 function renderFound(res, q, at) {
   const tt = res.totals || {};
   const items = tt.items ?? res.companies.reduce((a, c) => a + (c.count || c.items.length), 0);
   const unv = tt.unverified ?? res.companies.reduce((a, c) => a + c.items.filter((i) => !i.verified).length, 0);
-  const head = el("div", {class: "res-head"},
-    el("div", {class: "print-only phead"}, el("strong", {text: t("print_h")}), el("span", {text: t("printed", {d: fmtDate(new Date(), true)})})),
-    el("p", {class: "eyebrow", text: t("res_eyebrow")}),
-    el("div", {class: "res-title"},
-      el("div", {},
-        el("h2", {id: "res-h", text: res.name || t("no_name")}),
-        el("div", {class: "sub", text: res.name ? t("holder") + " · " + t("masked") : ""})),
-      el("dl", {class: "meta"},
-        el("dt", {text: t("searched_for")}), el("dd", {text: q.label()}),
-        el("dt", {text: t("searched_at")}), el("dd", {text: fmtDate(at, true)}))));
-  const tiles = el("div", {class: "tiles"},
-    tile(t("t_cash"), money(tt.cash), t("t_cash_s"), true),
-    tile(t("t_shares"), num(tt.shares), t("t_shares_s")),
-    tile(t("t_cos"), num(tt.companies ?? res.companies.length), t("t_cos_s")),
-    tile(t("t_check"), num(unv), t("t_check_s")));
+  const out = [];
+  out.push(el("div", {class: "print-only phead"}, el("strong", {text: t("print_h")}), el("span", {text: t("printed", {d: fmtDate(new Date(), true)})})));
+  out.push(el("h2", {id: "res-h", text: t("results_h", {id: q.label()})}));
 
-  const body = el("div", {class: "res-body"});
-  if (unv > 0) body.append(notice("warn", t("uv_note", {n: num(unv), t: num(items)})));
+  out.push(el("dl", {class: "summary"},
+    row(t("holder"), res.name ? el("span", {}, res.name + " ", el("span", {class: "muted", text: t("masked")})) : el("span", {class: "muted", text: t("no_name")})),
+    row(t("t_cash"), el("span", {class: "big", text: money(tt.cash)}), el("br"), el("span", {class: "muted small", text: t("t_cash_s")})),
+    row(t("t_shares"), el("span", {class: "big", text: num(tt.shares)})),
+    row(t("t_cos"), num(tt.companies ?? res.companies.length)),
+    unv > 0 ? row(t("t_check"), num(unv)) : null,
+    row(t("searched_at"), fmtDate(at, true))));
+
+  if (unv > 0) out.push(el("div", {class: "inset"}, el("p", {text: t("uv_note", {n: num(unv), t: num(items)})})));
+
+  out.push(el("h3", {text: t("by_co")}));
   const many = res.companies.length > 3;
-  const tb = el("div", {class: "toolbar"});
-  const grp = el("div", {class: "grp"});
-  if (res.companies.length > 1) {
-    const ex = el("button", {class: "btn-2", type: "button"}, icon(I.open), t("expand"));
-    const co = el("button", {class: "btn-2", type: "button"}, icon(I.close), t("collapse"));
-    ex.onclick = () => body.querySelectorAll("details.co").forEach((d) => (d.open = true));
-    co.onclick = () => body.querySelectorAll("details.co").forEach((d) => (d.open = false));
-    grp.append(ex, co);
+  const list = el("div", {class: many ? "acc" : "acc static"});
+  if (many) {
+    const tog = el("button", {class: "linkbtn small", type: "button", "aria-expanded": "false", text: t("show_all")});
+    tog.onclick = () => {
+      const open = tog.getAttribute("aria-expanded") !== "true";
+      list.querySelectorAll("details.co").forEach((d) => (d.open = open));
+    };
+    list.addEventListener("toggle", () => {
+      const all = [...list.querySelectorAll("details.co")].every((d) => d.open);
+      tog.setAttribute("aria-expanded", String(all)); tog.textContent = t(all ? "hide_all" : "show_all");
+    }, true);
+    out.push(el("div", {class: "acc-controls"}, el("span", {class: "muted small", text: t("n_cos", {n: num(res.companies.length)})}), tog));
   }
-  const pr = el("button", {class: "btn-2", type: "button"}, icon(I.print), t("print"));
-  pr.onclick = () => window.print();
-  tb.append(grp, pr);
-  body.append(tb);
-
   for (const c of res.companies) {
-    const rows = c.items.map((it) => {
-      const sh = SHARE_TYPES.has(it.type);
-      const amt = sh ? (it.shares == null ? "—" : t("n_shares", {n: num(it.shares)})) : (it.net == null ? "—" : money(it.net));
-      const label = it.page ? t("src_p", {d: it.doc || "", p: num(it.page)}) : t("src", {d: it.doc || ""});
-      const src = isHttp(it.url)
-        ? el("a", {class: "ext", href: it.url, target: "_blank", rel: "noopener noreferrer", title: it.doc_title || null}, label, icon(I.ext), el("span", {class: "sr", text: " " + t("opens_new")}))
-        : document.createTextNode(label);
-      return el("tr", {},
-        el("td", {text: it.year || "—"}),
-        el("td", {}, typeLabel(it.type), it.verified ? null : el("span", {class: "badge", text: t("needs_check")})),
-        el("td", {class: "r" + (it.verified ? "" : " uv"), text: amt}),
-        el("td", {}, src));
-    });
     const n = c.count || c.items.length;
-    const table = el("div", {class: "scroll"}, el("table", {},
-      el("caption", {class: "sr", text: c.company}),
-      el("thead", {}, el("tr", {}, el("th", {scope: "col", text: t("h_year")}), el("th", {scope: "col", text: t("h_type")}), el("th", {scope: "col", class: "r", text: t("h_amount")}), el("th", {scope: "col", text: t("h_source")}))),
-      el("tbody", {}, ...rows)));
-    const sum = el("summary", {},
-      el("div", {}, el("h3", {text: c.company}), el("div", {class: "cnt", text: n === 1 ? t("n_entry") : t("n_entries", {n: num(n)})})),
-      el("div", {class: "nums"},
-        el("div", {}, el("small", {text: t("c_cash")}), el("b", {text: money(c.cash)})),
-        el("div", {}, el("small", {text: t("c_shares")}), el("b", {text: num(c.shares)}))),
-      (() => { const s = icon(I.chev); s.setAttribute("class", "chev"); return s; })());
-    const d = el("details", {class: "co"}, sum, table);
+    const meta = t("co_meta", {e: n === 1 ? t("n_entry") : t("n_entries", {n: num(n)}), c: money(c.cash), s: num(c.shares)});
+    const togLbl = el("span", {class: "tog", "aria-hidden": "true"});
+    const s = el("summary", {}, el("span", {class: "name", text: c.company}), togLbl, el("span", {class: "meta", text: meta}));
+    const d = el("details", {class: "co"}, s, el("div", {class: "body"}, companyTable(c)));
     d.open = !many;
-    body.append(d);
+    togLbl.textContent = t(d.open ? "hide" : "show");
+    d.addEventListener("toggle", () => (togLbl.textContent = t(d.open ? "hide" : "show")));
+    if (!many) { s.addEventListener("click", (e) => e.preventDefault()); s.tabIndex = -1; }
+    list.append(d);
   }
+  out.push(list);
 
-  const cmsf = el("a", {href: "https://cmsfbd.org/", target: "_blank", rel: "noopener noreferrer", class: "ext"}, "cmsfbd.org", icon(I.ext), el("span", {class: "sr", text: " " + t("opens_new")}));
-  const p3 = el("p", {}, t("how3") + " ", cmsf);
-  const again = el("button", {class: "btn-2", type: "button", style: "margin-top:16px"}, icon(I.back), t("new_search"));
-  again.onclick = newSearch;
-  body.append(el("div", {class: "steps"}, el("h3", {text: t("how_h")}),
-    el("ol", {}, el("li", {}, el("p", {text: t("how1")})), el("li", {}, el("p", {text: t("how2")})), el("li", {}, p3)), again));
+  const cmsf = el("a", {href: "https://cmsfbd.org/", target: "_blank", rel: "noopener noreferrer"}, "cmsfbd.org", el("span", {class: "sr", text: " " + t("opens_new")}));
+  out.push(el("h3", {style: "margin-top:40px", text: t("how_h")}));
+  out.push(el("ol", {class: "steps"}, el("li", {text: t("how1")}), el("li", {text: t("how2")}), el("li", {}, t("how3") + " ", cmsf)));
 
-  return el("article", {class: "card", "aria-labelledby": "res-h"}, head, tiles, body);
+  const pr = el("button", {class: "btn secondary", type: "button", text: t("print")}); pr.onclick = () => window.print();
+  const again = el("button", {class: "linkbtn", type: "button", text: t("new_search")}); again.onclick = newSearch;
+  out.push(el("div", {class: "actions no-print"}, pr), el("p", {class: "no-print"}, again));
+  return el("div", {}, ...out);
 }
 function renderEmpty(q) {
-  const again = el("button", {class: "btn-2", type: "button", style: "margin-top:16px"}, icon(I.back), t("new_search"));
-  again.onclick = newSearch;
-  return el("article", {class: "card empty", "aria-labelledby": "res-h"},
-    el("p", {class: "eyebrow", text: t("res_eyebrow")}),
-    el("h2", {id: "res-h", text: t("nf_h")}),
-    el("p", {text: t("nf_p", {id: q.label()})}),
-    el("ul", {}, el("li", {text: t("nf1")}), el("li", {text: t("nf2")}), el("li", {text: t("nf3")})),
-    again);
+  const again = el("button", {class: "linkbtn", type: "button", text: t("new_search")}); again.onclick = newSearch;
+  return el("div", {},
+    el("h2", {id: "res-h", text: t("nf_h", {id: q.label()})}),
+    el("p", {text: t("nf_p")}),
+    el("ul", {class: "list"}, el("li", {text: t("nf1")}), el("li", {text: t("nf2")}), el("li", {text: t("nf3")})),
+    el("p", {text: t("nf4")}),
+    el("p", {}, again));
 }
 function newSearch() {
-  last = null; $("result").replaceChildren(); setStatus();
+  last = null; $("result").replaceChildren(); hideErrSum();
   const bo = $("t-bo").getAttribute("aria-selected") === "true";
   const inp = bo ? $("bo") : $("folio");
+  $("search").scrollIntoView({block: "start"});
   inp.select(); inp.focus();
-  $("search").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
 }
 
 /* ---------- search flow ---------- */
@@ -739,56 +683,55 @@ function codeVal() {
   if (typed) return typed;
   try { return sessionStorage.getItem("code") || null; } catch (_) { return null; }
 }
+function fieldFail(k, key, vars) { $("result").replaceChildren(); showFieldErr(k, key, vars); renderErrSum(true, null); }
 async function search(form, q) {
   if (inflight) inflight.abort();
   const ctl = new AbortController(); inflight = ctl;
-  last = null; setStatus(); skeleton(); busy(form, true);
+  last = null; hideErrSum(); $("result").replaceChildren(); busy(form, true);
   const at = new Date();
   try {
     const res = await rpc(q.fn, Object.assign({p_code: codeVal()}, q.body), ctl.signal);
     if (ctl !== inflight) return;
     if (res.error) {
-      $("result").replaceChildren();
-      if (res.error === "code_required") { $("fld-code").hidden = false; try { sessionStorage.removeItem("code"); } catch (_) {} showFieldErr("code", "e_code"); $("code").focus(); return; }
-      if (res.error === "invalid_bo") { showFieldErr("bo", "e_bo_srv"); $("bo").focus(); return; }
-      if (res.error === "invalid_folio") { showFieldErr("folio", "e_folio"); $("folio").focus(); return; }
-      return setStatus("err", t(LIMITS.has(res.error) ? res.error : "network"));
+      if (res.error === "code_required") { $("fld-code").hidden = false; try { sessionStorage.removeItem("code"); } catch (_) {} return fieldFail("code", "e_code"); }
+      if (res.error === "invalid_bo") return fieldFail("bo", "e_bo_srv");
+      if (res.error === "invalid_folio") return fieldFail("folio", "e_folio");
+      return renderErrSum(true, LIMITS.has(res.error) ? res.error : "network");
     }
     try { const c = $("code").value.trim(); if (c) sessionStorage.setItem("code", c); } catch (_) {}
     clearFieldErr("code");
     last = {redraw: () => $("result").replaceChildren(res.found ? renderFound(res, q, at) : renderEmpty(q))};
     last.redraw();
     const out = $("result");
-    out.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
+    out.scrollIntoView({block: "start"});
     out.focus({preventScroll: true});
   } catch (e) {
     if (e.code === "cancel" || ctl !== inflight) return;
     $("result").replaceChildren();
-    if (e.code === "code_required") { $("fld-code").hidden = false; showFieldErr("code", "e_code"); $("code").focus(); return; }
-    setStatus("err", t(LIMITS.has(e.code) ? e.code : e.code === "timeout" ? "timeout" : "network"), LIMITS.has(e.code) ? null : () => search(form, q));
+    if (e.code === "code_required") { $("fld-code").hidden = false; return fieldFail("code", "e_code"); }
+    renderErrSum(true, LIMITS.has(e.code) ? e.code : e.code === "timeout" ? "timeout" : "network", LIMITS.has(e.code) ? null : () => search(form, q));
   } finally {
     if (ctl === inflight) { inflight = null; busy(form, false); }
   }
 }
-function isBusy(form) { return form.querySelector(".btn").getAttribute("aria-disabled") === "true"; }
+const isBusy = (form) => form.querySelector(".btn").getAttribute("aria-disabled") === "true";
 
 $("p-bo").addEventListener("submit", (e) => {
   e.preventDefault(); if (isBusy(e.currentTarget)) return;
-  clearAllErr(); setStatus();
+  clearAllErr();
   const d = boDigits($("bo").value);
-  if (!d.length) { showFieldErr("bo", "e_bo_empty"); return $("bo").focus(); }
-  if (d.length !== 16) { showFieldErr("bo", "e_bo_len", {n: num(d.length)}); return $("bo").focus(); }
-  search(e.currentTarget, {fn: "ss_lookup_bo", body: {p_bo: d}, label: () => "BO " + group4(d)});
+  if (!d.length) { showFieldErr("bo", "e_bo_empty"); return renderErrSum(true, null); }
+  if (d.length !== 16) { showFieldErr("bo", "e_bo_len", {n: num(d.length)}); return renderErrSum(true, null); }
+  search(e.currentTarget, {fn: "ss_lookup_bo", body: {p_bo: d}, label: () => (lang === "bn" ? "বিও " : "BO ") + group4(d)});
 });
 $("p-folio").addEventListener("submit", (e) => {
   e.preventDefault(); if (isBusy(e.currentTarget)) return;
-  clearAllErr(); setStatus();
+  clearAllErr();
   const company = $("company").value, folio = $("folio").value.trim();
-  let bad = null;
-  if (!folio) { showFieldErr("folio", "e_folio"); bad = $("folio"); }
-  if (!company) { showFieldErr("company", "e_company"); bad = $("company"); }
-  if (bad) return bad.focus();
-  search(e.currentTarget, {fn: "ss_lookup_folio", body: {p_company: company, p_folio: folio}, label: () => company + " · " + (lang === "bn" ? "ফোলিও " : "folio ") + folio});
+  if (!company) showFieldErr("company", "e_company");
+  if (!folio) showFieldErr("folio", "e_folio");
+  if (!company || !folio) return renderErrSum(true, null);
+  search(e.currentTarget, {fn: "ss_lookup_folio", body: {p_company: company, p_folio: folio}, label: () => company + ", " + (lang === "bn" ? "ফোলিও " : "folio ") + folio});
 });
 
 /* print: closed <details> content does not print, so open them all and restore afterwards */
@@ -803,8 +746,8 @@ applyLang();
     info = await rpc("ss_info");
     $("fld-code").hidden = !info.require_code;
     try { const saved = sessionStorage.getItem("code"); if (info.require_code && saved) $("code").value = saved; } catch (_) {}
-  } catch (_) { info = {}; $("stats").hidden = true; }
-  renderStats();
+  } catch (_) { info = {}; }
+  renderCoverage();
 })();
 (async () => {
   try { const list = await rpc("ss_companies"); companies = Array.isArray(list) ? list : false; }
