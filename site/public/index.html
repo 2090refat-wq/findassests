@@ -587,7 +587,7 @@ function companyTable(c) {
   const rows = c.items.map((it) => {
     const sh = SHARE_TYPES.has(it.type);
     const amt = sh ? (it.shares == null ? "–" : t("n_shares", {n: num(it.shares)})) : (it.net == null ? "–" : money(it.net));
-    const label = it.page ? t("src_p", {d: it.doc || "", p: num(it.page)}) : t("src", {d: it.doc || ""});
+    const label = it.page ? t("src_p", {d: it.doc || "", p: new Intl.NumberFormat(loc(), {useGrouping: false}).format(it.page)}) : t("src", {d: it.doc || ""});
     const src = isHttp(it.url)
       ? el("a", {href: it.url, target: "_blank", rel: "noopener noreferrer", title: it.doc_title || null}, label, el("span", {class: "sr", text: " " + t("opens_new")}))
       : document.createTextNode(label);
