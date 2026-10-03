@@ -415,7 +415,7 @@ function fmtDate(iso, withTime) {
   const d = typeof iso === "string" ? new Date(iso + (iso.length === 10 ? "T00:00:00" : "")) : iso;
   if (isNaN(d)) return String(iso);
   const o = {day: "numeric", month: "long", year: "numeric"};
-  if (withTime) Object.assign(o, {hour: "numeric", minute: "2-digit"});
+  if (withTime) Object.assign(o, {hour: "numeric", minute: "2-digit"}, lang === "bn" ? {hourCycle: "h23"} : {});
   return new Intl.DateTimeFormat(lang === "bn" ? "bn-BD" : "en-GB", o).format(d);
 }
 
