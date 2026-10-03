@@ -174,8 +174,19 @@ $("bo").addEventListener("input", (e) => {
 function money(n) { return "৳ " + fmt.format(Number(n) || 0); }
 function typeLabel(t) { return TYPES[t] || TYPES.other; }
 
+const LIMIT_MSG = {
+  code_required: "A valid access code is required.",
+  locked: "Too many failed or empty searches from this connection. It is locked for a while; please try again later.",
+  rate_limited: "Too many searches in a short time. Please wait a minute and try again.",
+  daily_cap: "The daily search limit has been reached. Please try again tomorrow."
+};
 function render(res, idLabel) {
   const out = $("result"); out.replaceChildren();
+  if (res.error && LIMIT_MSG[res.error]) {
+    if (res.error === "code_required") { $("code-row").hidden = false; try { sessionStorage.removeItem("code"); } catch (_) {} }
+    return setStatus(LIMIT_MSG[res.error], "err");
+  }
+  try { if ($("code").value) sessionStorage.setItem("code", $("code").value.trim()); } catch (_) {}
   if (res.error === "invalid_bo") return setStatus("A BO ID has exactly 16 digits. Please check the number and try again.", "err");
   if (res.error === "invalid_folio") return setStatus("Please choose a company and enter a folio number.", "err");
   if (!res.found) {
@@ -237,7 +248,11 @@ async function run(btn, fn) {
     else setStatus("Sorry, the search could not be completed. Check your connection and try again.", "err");
   } finally { btn.disabled = false; }
 }
-const codeVal = () => (needCode ? $("code").value : null) || null;
+const codeVal = () => {
+  const typed = $("code").value.trim();
+  if (typed) return typed;
+  try { return sessionStorage.getItem("code") || null; } catch (_) { return null; }
+};
 
 $("f-bo").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -257,6 +272,7 @@ $("f-folio").addEventListener("submit", (e) => {
   try {
     const info = await rpc("ss_info");
     needCode = !!info.require_code; $("code-row").hidden = !needCode;
+    try { const saved = sessionStorage.getItem("code"); if (needCode && saved) $("code").value = saved; } catch (_) {}
     if (info.updated) $("updated").textContent = "Data last updated: " + info.updated + ".";
   } catch (_) {}
   try {
