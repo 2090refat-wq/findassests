@@ -74,10 +74,17 @@ for doc_id, m in man.items():
     d["rows_extracted"] = len(raw)
     for c in ("shares", "gross_amount", "tax_amount", "net_amount"):
         raw[c] = pd.to_numeric(raw[c], errors="coerce")
+    tot_mask = raw["holder_name_raw"].str.match(r"(?i)^\W*(grand\s+|sub\s*-?\s*)?total\b")
+    extra_totals = [float(v) for v in raw.loc[tot_mask, "net_amount"].fillna(raw.loc[tot_mask, "shares"]).dropna()]
+    raw = raw[~tot_mask].copy()
+    addr = raw["holder_name_raw"].str.upper().str.contains(r"\b(?:FLOOR|HOUSE|ROAD|APT|FLAT|BUILDING|MANSION|TOWER|AVENUE)\b", regex=True)
+    for mask, tag in ((raw["net_amount"] > 1_000_000, "implausible_amount"), (addr, "name_looks_like_address")):
+        raw.loc[mask, "issues"] = raw.loc[mask, "issues"].apply(lambda x, t=tag: (x + ";" + t).strip(";"))
+    d["rows_extracted"] = len(raw)
     is_stock = (raw["dividend_type"].isin(["stock", "right"])).mean() > 0.5 if len(raw) else False
     ext = float(raw["shares"].sum()) if is_stock else float(raw["net_amount"].sum())
     d["extracted_total"] = round(ext, 2)
-    totals = [v for v in (st.get("totals") or []) if v >= 100]  # drop header noise such as "Total Balance 7"
+    totals = [v for v in (st.get("totals") or []) + extra_totals if v >= 100]  # drop header noise such as "Total Balance 7"
     issues = []
     if totals:
         cands = {max(totals), round(sum(totals), 2), round(sum(totals) - max(totals), 2),
@@ -232,14 +239,16 @@ if len(sd):
 
 # ---------- holders ----------
 def agg(g):
-    cash = g.loc[g["dividend_type"] != "stock", "net_amount"].sum()
+    unver = g["issues"].str.contains("implausible_amount|name_looks_like_address")
+    cash = g.loc[(g["dividend_type"] != "stock") & ~unver, "net_amount"].sum()
+    cash_unver = g.loc[(g["dividend_type"] != "stock") & unver, "net_amount"].sum()
     return pd.Series(dict(
         bo_id=next((b for b in g["bo_id"] if b), ""),
         folio_numbers="; ".join(sorted({f"{c}:{f}" for c, f in zip(g["company"], g["folio_no"]) if f})),
         name_canonical=g["holder_name_raw"].mode().iat[0],
         name_variants="; ".join(sorted(set(g["holder_name_raw"]))[:8]),
         father_or_spouse="", companies_count=g["company"].nunique(), items_count=len(g),
-        total_cash_bdt=round(cash, 2), total_shares=g["shares"].sum(),
+        total_cash_bdt=round(cash, 2), total_cash_unverified_bdt=round(cash_unver, 2), total_shares=g["shares"].sum(),
         first_year=g["year_start"].min(), last_year=g["year_start"].max(), status="new",
         settled_all=int(g["settled_flag"].all()), institution=int(g["issues"].str.contains("institution").any())))
 holders = div.groupby("holder_id").apply(agg, include_groups=False).reset_index()
@@ -261,9 +270,10 @@ docs_df = pd.DataFrame(docs)
 docs_df.to_csv(OUT / "documents_report.csv", index=False)
 docs_df[docs_df["status"].isin(["failed", "partial"])].to_csv(OUT / "failed_or_partial.csv", index=False)
 
+(OUT / "unclaimed.sqlite").unlink(missing_ok=True)
 con = sqlite3.connect(OUT / "unclaimed.sqlite")
 schema = (ROOT / "schema.sql").read_text().replace("raw_row_json      TEXT                -- the original extracted cells, for audit",
-                                                    "raw_row_json      TEXT,\n  issues            TEXT")
+                                                    "raw_row_json      TEXT,\n  issues            TEXT").replace("total_cash_bdt    REAL,", "total_cash_bdt    REAL,\n  total_cash_unverified_bdt REAL,")
 con.executescript(schema)
 for tname, df in (("documents", docs_df), ("dividends", div_out), ("holders", hold_csv), ("review_queue", review_df),
                   ("settled_claims", sd)):
@@ -273,7 +283,7 @@ con.commit(); con.close()
 
 # ---------- summary ----------
 pc = docs_df["status"].value_counts().to_dict()
-cash = div_out[div_out["dividend_type"] != "stock"]
+cash = div_out[(div_out["dividend_type"] != "stock") & ~div_out["issues"].str.contains("implausible_amount|name_looks_like_address")]
 lines = ["# Unclaimed dividends - summary", "", f"Documents: {pc}", f"Dividend rows: {len(div_out):,}",
          f"Holders: {len(holders):,}", f"Total cash BDT (all rows): {cash['net_amount'].sum():,.2f}",
          f"Total shares (stock rows): {div_out['shares'].sum():,.0f}",
