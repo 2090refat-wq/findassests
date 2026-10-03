@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>ন্যায়ের পথে — সত্য ও বিচারের লড়াই</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#fff;overflow:hidden;
+    font-family:'Noto Sans Bengali','Kalpurush','Nirmala UI','Vrinda','Siyam Rupali',sans-serif;
+    touch-action:none;user-select:none;-webkit-user-select:none}
+  canvas{display:block;width:100vw;height:100vh}
+  #screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.88);padding:16px;box-sizing:border-box;overflow:auto}
+  #screen.on{display:flex}
+  .card{max-width:640px;width:100%;border:2px solid #fff;padding:22px 24px;text-align:center;background:#000}
+  .card h1{font-size:clamp(30px,6vw,52px);margin:0 0 6px;font-weight:900;letter-spacing:1px}
+  .card h2{font-size:clamp(22px,4vw,32px);margin:0 0 10px;font-weight:900}
+  .card p{font-size:clamp(15px,2.4vw,18px);line-height:1.75;margin:8px 0;color:#ddd}
+  .card .goal{border-top:1px solid #777;border-bottom:1px solid #777;padding:8px 0;color:#fff;font-weight:700}
+  .card .fact{border:1px dashed #888;padding:10px 12px;text-align:left;font-size:clamp(14px,2.2vw,16px);color:#ccc}
+  .card .small{font-size:13px;color:#999}
+  button{font:inherit;font-weight:700;font-size:20px;background:#fff;color:#000;border:2px solid #fff;
+    padding:10px 30px;margin-top:14px;cursor:pointer}
+  button:hover{background:#000;color:#fff}
+  #dash{position:fixed;right:18px;bottom:22px;width:84px;height:84px;border-radius:50%;
+    background:rgba(0,0,0,.5);color:#fff;border:2px solid #fff;font-size:17px;padding:0;margin:0;display:none}
+  #dash:active{background:#fff;color:#000}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="dash">ঝাঁপ</button>
+<div id="screen"><div class="card" id="card"></div></div>
+
+<script>
+'use strict';
+/* ---------- সেটআপ ---------- */
+const W = 960, H = 600;
+const FONT = "'Noto Sans Bengali','Kalpurush','Nirmala UI','Vrinda',sans-serif";
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const screenEl = document.getElementById('screen'), cardEl = document.getElementById('card');
+const dashBtn = document.getElementById('dash');
+const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+let sc = 1, ox = 0, oy = 0, dpr = 1;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+  sc = Math.min(cv.width / W, cv.height / H);
+  ox = (cv.width - W * sc) / 2; oy = (cv.height - H * sc) / 2;
+}
+addEventListener('resize', resize); resize();
+
+const BN = '০১২৩৪৫৬৭৮৯';
+const bn = n => String(n).replace(/\d/g, d => BN[d]);
+
+/* ---------- শব্দ (খুব সাধারণ) ---------- */
+let AC = null, muted = false;
+function beep(f, d, type = 'square', v = 0.05) {
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = f; g.gain.value = v;
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + d);
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + d);
+  } catch (e) {}
+}
+
+/* ---------- ধাপসমূহ ---------- */
+const STAGES = [
+  { name: 'গুম', type: 'rescue',
+    goal: 'অন্ধকার থেকে ৫ জন নিখোঁজ মানুষকে মুক্ত করো। প্রত্যেকের পাশে দাঁড়িয়ে থাকলে শিকল ভাঙবে।',
+    fact: 'জুলাই-আগস্ট ২০২৪-এর পর গঠিত গুম-সংক্রান্ত তদন্ত কমিশনে নিখোঁজ স্বজনের বিপুল সংখ্যক অভিযোগ জমা পড়েছে। জাতিসংঘের কর্মদল দীর্ঘদিন ধরেই বাংলাদেশে জোরপূর্বক গুমের ঘটনা নথিভুক্ত করে আসছে। বহু পরিবার আজও স্বজনের খোঁজ পায়নি।' },
+  { name: 'বিচারবহির্ভূত হত্যা', type: 'survive', time: 45,
+    goal: '৪৫ সেকেন্ড টিকে থাকো — সত্যের সাক্ষীদের রক্ষা করো। গুলি এড়াতে ঝাঁপ (স্পেস) ব্যবহার করো।',
+    fact: 'জাতিসংঘ মানবাধিকার দপ্তর (OHCHR)-এর ফেব্রুয়ারি ২০২৫-এর প্রতিবেদন অনুযায়ী ২০২৪-এর জুলাই-আগস্টের আন্দোলন দমনে ১,৪০০ জন পর্যন্ত মানুষ নিহত হয়েছেন এবং হাজার হাজার আহত হয়েছেন। তারা বলেছে, এসব হামলা পরিকল্পিত ও ব্যাপক ছিল। এর আগে ২০২১ সালে যুক্তরাষ্ট্র বিচারবহির্ভূত হত্যা ও নির্যাতনের অভিযোগে র‍্যাব ও কয়েকজন কর্মকর্তার ওপর নিষেধাজ্ঞা দিয়েছিল।' },
+  { name: 'নির্যাতন', type: 'cells',
+    goal: '৩টি নির্যাতন কক্ষ ভেঙে ফেলো। কক্ষগুলো থেকে প্রহরী বের হতে থাকবে — কক্ষের দিকে এগিয়ে আলো ছোঁড়ো।',
+    fact: 'জাতিসংঘের প্রতিবেদনসহ বিভিন্ন মানবাধিকার সংস্থা আটক ব্যক্তিদের ওপর নির্যাতন, অমানবিক আচরণ ও বন্দিদশার বিবরণ নথিভুক্ত করেছে। নির্যাতনের শিকার মানুষের কথা শোনা ও লিপিবদ্ধ করাই বিচারের প্রথম ধাপ।' },
+  { name: 'বিচার', type: 'boss',
+    goal: 'শেষ লড়াই: স্বৈরশাসনের প্রতীককে পরাজিত করো — যেন সত্য, জবাবদিহি ও ন্যায়বিচার প্রতিষ্ঠিত হয়।',
+    fact: '' }
+];
+
+/* ---------- গেমের অবস্থা ---------- */
+let state = 'menu';       // menu | play | card
+let stageIdx = 0;
+let G = null;             // বর্তমান ধাপের তথ্য
+const keys = {};
+let joy = { id: null, x0: 0, y0: 0, x: 0, y: 0 };
+
+function newStage(i) {
+  stageIdx = i;
+  const s = STAGES[i];
+  G = {
+    t: 0, s, p: { x: W / 2, y: H / 2, hp: 5, inv: 0, dash: 0, dashCd: 0, dx: 1, dy: 0, fire: 0 },
+    en: [], pb: [], eb: [], parts: [], caps: [], cells: [], boss: null,
+    spawnT: 1, left: s.time || 0, freed: 0, done: false, flash: 0, shake: 0
+  };
+  if (s.type === 'rescue') {
+    const pts = [[120, 110], [840, 110], [120, 490], [840, 490], [480, 90]];
+    pts.forEach(([x, y]) => G.caps.push({ x, y, prog: 0, free: false }));
+  } else if (s.type === 'cells') {
+    [[150, 130], [810, 150], [480, 500]].forEach(([x, y]) => G.cells.push({ x, y, hp: 22, max: 22, t: 2 + Math.random() * 2 }));
+  } else if (s.type === 'boss') {
+    G.boss = { x: W / 2, y: 130, hp: 70, max: 70, t: 2, ang: 0, mt: 5, r: 46 };
+  }
+}
+
+/* ---------- পর্দা (ওভারলে) ---------- */
+function show(html) { cardEl.innerHTML = html; screenEl.classList.add('on'); }
+function hide() { screenEl.classList.remove('on'); }
+
+function pathHtml(cur) {
+  return '<p class="small">' + STAGES.map((s, i) =>
+    (i < cur ? '● ' : i === cur ? '◉ ' : '○ ') + s.name).join(' — ') + '</p>';
+}
+
+function menu() {
+  state = 'menu';
+  dashBtn.style.display = 'none';
+  show(`
+    <h1>ন্যায়ের পথে</h1>
+    <p><b>গুম, খুন ও নির্যাতনের বিরুদ্ধে সত্য ও বিচারের লড়াই</b></p>
+    <p>তুমি এক টুকরো আলো। অন্ধকার শাসনের বিরুদ্ধে চারটি ধাপ পেরিয়ে বিচারের কাঠগড়া পর্যন্ত পৌঁছাতে হবে — এই পথই জয়ের পথ।</p>
+    ${pathHtml(-1)}
+    <p class="small">${isTouch ? 'বাম পাশে আঙুল টেনে চলো • ডান নিচের “ঝাঁপ” বোতামে দ্রুত সরে যাও' : 'চলা: W A S D / তীর চিহ্ন • ঝাঁপ: স্পেস • শব্দ বন্ধ/চালু: M'}<br>আলো নিজে থেকেই কাছের শত্রুর দিকে ছোটে।</p>
+    <button id="go">লড়াই শুরু করো</button>
+    <p class="small">তথ্যসূত্র: জাতিসংঘ মানবাধিকার দপ্তর (OHCHR) ও অন্যান্য মানবাধিকার সংস্থার নথিভুক্ত প্রতিবেদন। এই খেলা প্রতীকী; লক্ষ্য সহিংসতা নয় — বিচার, জবাবদিহি ও আইনের শাসন।</p>`);
+  document.getElementById('go').onclick = () => intro(0);
+}
+
+function intro(i) {
+  newStage(i); state = 'card';
+  dashBtn.style.display = 'none';
+  const s = STAGES[i];
+  show(`
+    ${pathHtml(i)}
+    <h2>ধাপ ${bn(i + 1)}: ${s.name}</h2>
+    <p class="goal">${s.goal}</p>
+    <button id="go">শুরু</button>`);
+  document.getElementById('go').onclick = begin;
+}
+
+function begin() {
+  hide(); state = 'play';
+  if (isTouch) dashBtn.style.display = 'block';
+  G.last = performance.now();
+}
+
+function clearStage() {
+  state = 'card'; dashBtn.style.display = 'none';
+  beep(660, .15, 'sine', .08); setTimeout(() => beep(880, .25, 'sine', .08), 150);
+  const s = STAGES[stageIdx];
+  if (stageIdx === STAGES.length - 1) return win();
+  show(`
+    ${pathHtml(stageIdx + 1)}
+    <h2>ধাপ সম্পন্ন: ${s.name}</h2>
+    <p class="fact">${s.fact}</p>
+    <p class="small">আরও জানতে: জাতিসংঘ মানবাধিকার দপ্তরের বাংলাদেশ বিষয়ক প্রতিবেদন পড়ুন।</p>
+    <button id="go">পরবর্তী ধাপ</button>`);
+  document.getElementById('go').onclick = () => intro(stageIdx + 1);
+}
+
+function lose() {
+  state = 'card'; dashBtn.style.display = 'none';
+  beep(120, .5, 'sawtooth', .08);
+  show(`
+    <h2>আলো নিভে গেছে…</h2>
+    <p>কিন্তু লড়াই শেষ হয়নি। সত্য কখনো হারে না — আবার উঠে দাঁড়াও।</p>
+    <button id="go">আবার চেষ্টা করো</button>`);
+  document.getElementById('go').onclick = () => intro(stageIdx);
+}
+
+function win() {
+  show(`
+    <h1>জয় ন্যায়ের!</h1>
+    <p>অন্ধকারের প্রতীক পরাজিত। কাঠগড়ায় দাঁড়িয়েছে অন্যায়।</p>
+    <p class="fact">জয় মানে প্রতিশোধ নয় — জয় মানে প্রতিটি গুম, প্রতিটি হত্যা ও প্রতিটি নির্যাতনের নিরপেক্ষ বিচার, ভুক্তভোগীদের স্বীকৃতি ও ক্ষতিপূরণ, এবং যেন এমন অপরাধ আর কখনো না ঘটে তার নিশ্চয়তা।</p>
+    <p>এই পথে সবচেয়ে বড় অস্ত্র: <b>সত্য বলা, তথ্য সংরক্ষণ করা, ভুক্তভোগীর পাশে দাঁড়ানো এবং আইনের পথে বিচার চাওয়া।</b></p>
+    <button id="go">আবার খেলো</button>`);
+  document.getElementById('go').onclick = menu;
+}
+
+/* ---------- ইনপুট ---------- */
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') { e.preventDefault(); doDash(); }
+  if (e.code === 'KeyM') muted = !muted;
+});
+addEventListener('keyup', e => keys[e.code] = false);
+dashBtn.addEventListener('touchstart', e => { e.preventDefault(); doDash(); }, { passive: false });
+dashBtn.addEventListener('mousedown', doDash);
+
+function sp(t) { return { x: (t.clientX * dpr - ox) / sc, y: (t.clientY * dpr - oy) / sc }; }
+cv.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) if (joy.id === null && t.clientX < innerWidth * 0.65) {
+    joy = { id: t.identifier, x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY };
+  }
+}, { passive: false });
+cv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) if (t.identifier === joy.id) { joy.x = t.clientX; joy.y = t.clientY; }
+}, { passive: false });
+const endTouch = e => { for (const t of e.changedTouches) if (t.identifier === joy.id) joy.id = null; };
+cv.addEventListener('touchend', endTouch); cv.addEventListener('touchcancel', endTouch);
+
+function doDash() {
+  if (state !== 'play') return;
+  const p = G.p;
+  if (p.dashCd > 0) return;
+  p.dash = 0.16; p.dashCd = 1.1; p.inv = Math.max(p.inv, 0.25);
+  beep(300, .1, 'triangle', .06);
+}
+
+/* ---------- সাহায্যকারী ---------- */
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function burst(x, y, n = 8, spd = 140) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.283, v = spd * (0.3 + Math.random());
+    G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.5 + Math.random() * 0.3 });
+  }
+}
+function spawnEnemy(kind, x, y) {
+  if (x === undefined) {
+    const side = Math.floor(Math.random() * 4);
+    x = side === 0 ? -20 : side === 1 ? W + 20 : Math.random() * W;
+    y = side === 2 ? -20 : side === 3 ? H + 20 : Math.random() * H;
+  }
+  G.en.push({ x, y, kind, hp: kind === 'shooter' ? 2 : 2, t: 1 + Math.random() * 1.5, flash: 0,
+    spd: 62 + stageIdx * 10 + Math.random() * 18 });
+}
+function ebullet(x, y, a, spd = 190) {
+  G.eb.push({ x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd });
+}
+function hurt() {
+  const p = G.p;
+  if (p.inv > 0) return;
+  p.hp--; p.inv = 1.2; G.shake = 0.25;
+  beep(160, .2, 'sawtooth', .07);
+  burst(p.x, p.y, 10, 160);
+  if (p.hp <= 0) lose();
+}
+
+/* ---------- হালনাগাদ ---------- */
+function update(dt) {
+  const p = G.p, s = G.s;
+  G.t += dt;
+  p.inv = Math.max(0, p.inv - dt); p.dashCd = Math.max(0, p.dashCd - dt);
+  G.shake = Math.max(0, G.shake - dt);
+
+  // চলাচল
+  let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+  let my = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0);
+  if (joy.id !== null) {
+    const jx = joy.x - joy.x0, jy = joy.y - joy.y0, l = Math.hypot(jx, jy);
+    if (l > 8) { mx = jx / Math.max(l, 50); my = jy / Math.max(l, 50); }
+  }
+  const ml = Math.hypot(mx, my);
+  if (ml > 1) { mx /= ml; my /= ml; }
+  if (ml > 0.1) { p.dx = mx / (ml > 1 ? 1 : ml); p.dy = my / (ml > 1 ? 1 : ml); }
+  let speed = 230;
+  if (p.dash > 0) { p.dash -= dt; speed = 700; if (ml < 0.1) { mx = p.dx; my = p.dy; } }
+  p.x = Math.min(W - 14, Math.max(14, p.x + mx * speed * dt));
+  p.y = Math.min(H - 14, Math.max(14, p.y + my * speed * dt));
+
+  // স্বয়ংক্রিয় আলো ছোঁড়া
+  p.fire -= dt;
+  if (p.fire <= 0) {
+    let best = null, bd = 400;
+    const targets = G.en.concat(G.cells, G.boss ? [G.boss] : []);
+    for (const t of targets) { const d = dist(p, t); if (d < bd) { bd = d; best = t; } }
+    if (best) {
+      const a = Math.atan2(best.y - p.y, best.x - p.x);
+      G.pb.push({ x: p.x, y: p.y, vx: Math.cos(a) * 560, vy: Math.sin(a) * 560, life: 0.9 });
+      p.fire = 0.2; beep(880, .04, 'square', .02);
+    }
+  }
+
+  // ধাপভিত্তিক যুক্তি
+  if (s.type === 'rescue') {
+    G.spawnT -= dt;
+    if (G.spawnT <= 0 && G.en.length < 6 + G.freed * 2) { spawnEnemy('chaser'); G.spawnT = Math.max(0.9, 2.4 - G.freed * 0.3); }
+    for (const c of G.caps) {
+      if (c.free) continue;
+      if (dist(p, c) < 50) c.prog += dt / 1.8; else c.prog = Math.max(0, c.prog - dt * 0.5);
+      if (c.prog >= 1) { c.free = true; G.freed++; burst(c.x, c.y, 24, 200); beep(740, .15, 'sine', .08); }
+    }
+    if (G.freed >= 5 && !G.done) { G.done = true; clearStage(); return; }
+  } else if (s.type === 'survive') {
+    G.left -= dt;
+    G.spawnT -= dt;
+    if (G.spawnT <= 0) {
+      spawnEnemy(Math.random() < 0.5 ? 'shooter' : 'chaser');
+      G.spawnT = Math.max(0.5, 1.6 - (45 - G.left) * 0.02);
+    }
+    if (G.left <= 0 && !G.done) { G.done = true; clearStage(); return; }
+  } else if (s.type === 'cells') {
+    for (const c of G.cells) {
+      c.t -= dt;
+      if (c.t <= 0 && G.en.length < 9) { spawnEnemy('chaser', c.x, c.y); c.t = 3.2; }
+    }
+    if (!G.cells.length && !G.done) { G.done = true; clearStage(); return; }
+  } else if (s.type === 'boss') {
+    const b = G.boss;
+    b.ang += dt * 0.7;
+    b.x = W / 2 + Math.cos(b.ang) * 300; b.y = 150 + Math.sin(b.ang * 1.3) * 60;
+    b.t -= dt; b.mt -= dt;
+    if (b.t <= 0) {
+      const n = b.hp < b.max / 2 ? 18 : 12, off = Math.random() * 6.28;
+      for (let i = 0; i < n; i++) ebullet(b.x, b.y, off + i * 6.283 / n, 150);
+      if (b.hp < b.max / 2) for (let k = -1; k <= 1; k++) ebullet(b.x, b.y, Math.atan2(p.y - b.y, p.x - b.x) + k * 0.2, 260);
+      b.t = b.hp < b.max / 2 ? 1.9 : 2.6;
+    }
+    if (b.mt <= 0) { spawnEnemy('chaser', b.x, b.y); b.mt = 4.5; }
+    if (dist(p, b) < b.r + 12) hurt();
+    if (b.hp <= 0 && !G.done) {
+      G.done = true; burst(b.x, b.y, 80, 320); G.en = []; G.eb = [];
+      setTimeout(clearStage, 900); state = 'ending';
+    }
+  }
+
+  // শত্রু
+  for (const e of G.en) {
+    const a = Math.atan2(p.y - e.y, p.x - e.x), d = dist(p, e);
+    e.flash = Math.max(0, e.flash - dt);
+    if (e.kind === 'shooter') {
+      const dir = d > 260 ? 1 : d < 200 ? -1 : 0;
+      e.x += Math.cos(a) * e.spd * 0.8 * dir * dt; e.y += Math.sin(a) * e.spd * 0.8 * dir * dt;
+      e.t -= dt;
+      if (e.t <= 0) { ebullet(e.x, e.y, a, 200); e.t = 2; }
+    } else {
+      e.x += Math.cos(a) * e.spd * dt; e.y += Math.sin(a) * e.spd * dt;
+    }
+    if (d < 25) hurt();
+  }
+  // শত্রুদের মধ্যে ভিড় এড়ানো
+  for (let i = 0; i < G.en.length; i++) for (let j = i + 1; j < G.en.length; j++) {
+    const a = G.en[i], b = G.en[j], d = dist(a, b);
+    if (d < 24 && d > 0) { const k = (24 - d) / 2 / d; a.x += (a.x - b.x) * k; a.y += (a.y - b.y) * k; b.x -= (a.x - b.x) * k; b.y -= (a.y - b.y) * k; }
+  }
+
+  // আলোর গোলা
+  for (const b of G.pb) {
+    b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+    for (const e of G.en) if (e.hp > 0 && Math.hypot(b.x - e.x, b.y - e.y) < 17) {
+      e.hp--; e.flash = 0.1; b.life = 0; burst(b.x, b.y, 4, 100);
+      if (e.hp <= 0) { burst(e.x, e.y, 12, 150); beep(200, .08, 'square', .04); }
+      break;
+    }
+    if (b.life > 0) for (const c of G.cells) if (Math.hypot(b.x - c.x, b.y - c.y) < 34) {
+      c.hp--; b.life = 0; burst(b.x, b.y, 3, 90);
+      if (c.hp <= 0) { burst(c.x, c.y, 40, 260); beep(100, .3, 'sawtooth', .07); G.shake = 0.3; }
+      break;
+    }
+    if (b.life > 0 && G.boss && G.boss.hp > 0 && Math.hypot(b.x - G.boss.x, b.y - G.boss.y) < G.boss.r) {
+      G.boss.hp--; b.life = 0; burst(b.x, b.y, 3, 100);
+    }
+  }
+  G.en = G.en.filter(e => e.hp > 0);
+  G.cells = G.cells.filter(c => c.hp > 0);
+  G.pb = G.pb.filter(b => b.life > 0);
+
+  // শত্রুর গুলি
+  for (const b of G.eb) {
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (Math.hypot(b.x - p.x, b.y - p.y) < 12) { hurt(); b.x = -999; }
+  }
+  G.eb = G.eb.filter(b => b.x > -30 && b.x < W + 30 && b.y > -30 && b.y < H + 30);
+
+  for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; }
+  G.parts = G.parts.filter(q => q.life > 0);
+}
+
+/* ---------- আঁকা ---------- */
+function drawPerson(x, y, c) {
+  ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y - 8, 5, 0, 6.283); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x, y - 3); ctx.lineTo(x, y + 9); ctx.moveTo(x - 7, y + 1); ctx.lineTo(x + 7, y + 1);
+  ctx.moveTo(x, y + 9); ctx.lineTo(x - 5, y + 18); ctx.moveTo(x, y + 9); ctx.lineTo(x + 5, y + 18); ctx.stroke();
+}
+function text(t, x, y, size, align = 'left', color = '#fff') {
+  ctx.font = `700 ${size}px ${FONT}`; ctx.textAlign = align; ctx.fillStyle = color; ctx.fillText(t, x, y);
+}
+
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (!G) return;
+  ctx.setTransform(sc, 0, 0, sc, ox, oy);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
+  if (G.shake > 0) ctx.translate((Math.random() - .5) * 8, (Math.random() - .5) * 8);
+
+  // মেঝের গ্রিড
+  ctx.strokeStyle = '#161616'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = 0; x <= W; x += 60) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = 0; y <= H; y += 60) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
+
+  const p = G.p;
+
+  // বন্দিরা
+  for (const c of G.caps) {
+    if (c.free) { drawPerson(c.x, c.y, '#fff'); ctx.strokeStyle = '#fff'; ctx.setLineDash([3, 5]); ctx.beginPath(); ctx.arc(c.x, c.y, 26, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); continue; }
+    ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.strokeRect(c.x - 24, c.y - 26, 48, 54);
+    for (let i = -12; i <= 12; i += 12) { ctx.beginPath(); ctx.moveTo(c.x + i, c.y - 26); ctx.lineTo(c.x + i, c.y + 28); ctx.stroke(); }
+    drawPerson(c.x, c.y, '#777');
+    if (c.prog > 0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(c.x, c.y, 36, -1.57, -1.57 + 6.283 * c.prog); ctx.stroke(); }
+  }
+  // নির্যাতন কক্ষ
+  for (const c of G.cells) {
+    ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+    ctx.fillRect(c.x - 34, c.y - 34, 68, 68); ctx.strokeRect(c.x - 34, c.y - 34, 68, 68);
+    ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(c.x - 34, c.y - 34); ctx.lineTo(c.x + 34, c.y + 34); ctx.moveTo(c.x + 34, c.y - 34); ctx.lineTo(c.x - 34, c.y + 34); ctx.stroke();
+    ctx.fillStyle = '#333'; ctx.fillRect(c.x - 34, c.y + 42, 68, 6);
+    ctx.fillStyle = '#fff'; ctx.fillRect(c.x - 34, c.y + 42, 68 * c.hp / c.max, 6);
+  }
+  // শত্রু
+  for (const e of G.en) {
+    ctx.fillStyle = e.flash > 0 ? '#fff' : '#000'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    if (e.kind === 'shooter') {
+      ctx.beginPath(); ctx.moveTo(e.x, e.y - 15); ctx.lineTo(e.x + 14, e.y + 11); ctx.lineTo(e.x - 14, e.y + 11); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillRect(e.x - 12, e.y - 12, 24, 24); ctx.strokeRect(e.x - 12, e.y - 12, 24, 24);
+      ctx.fillStyle = e.flash > 0 ? '#000' : '#fff'; ctx.fillRect(e.x - 6, e.y - 4, 4, 4); ctx.fillRect(e.x + 2, e.y - 4, 4, 4);
+    }
+  }
+  // বস
+  if (G.boss && G.boss.hp > 0) {
+    const b = G.boss;
+    ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * 0.785 + G.t * 0.4; ctx.lineTo(b.x + Math.cos(a) * b.r, b.y + Math.sin(a) * b.r); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeRect(b.x - 20, b.y - 14, 40, 28);
+    ctx.fillStyle = '#fff'; ctx.fillRect(b.x - 12, b.y - 5, 8, 6); ctx.fillRect(b.x + 4, b.y - 5, 8, 6);
+    text('স্বৈরশাসন', b.x, b.y - b.r - 8, 15, 'center');
+  }
+  // গুলি
+  ctx.fillStyle = '#fff';
+  for (const b of G.pb) { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, 6.283); ctx.fill(); }
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  for (const b of G.eb) { ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, 6.283); ctx.fill(); ctx.stroke(); }
+  // কণা
+  ctx.fillStyle = '#fff';
+  for (const q of G.parts) { ctx.globalAlpha = Math.min(1, q.life * 2); ctx.fillRect(q.x, q.y, 3, 3); }
+  ctx.globalAlpha = 1;
+
+  // খেলোয়াড় (আলো)
+  if (!(p.inv > 0 && Math.floor(G.t * 20) % 2)) {
+    const g = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 40);
+    g.addColorStop(0, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, 40, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, 6.283); ctx.stroke();
+  }
+
+  // অন্ধকারের আবরণ
+  const dk = ctx.createRadialGradient(p.x, p.y, 140, p.x, p.y, 520);
+  dk.addColorStop(0, 'rgba(0,0,0,0)'); dk.addColorStop(1, 'rgba(0,0,0,.4)');
+  ctx.fillStyle = dk; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // HUD
+  const s = G.s;
+  text('ধাপ ' + bn(stageIdx + 1) + ': ' + s.name, 20, 34, 20);
+  let hearts = ''; for (let i = 0; i < 5; i++) hearts += i < p.hp ? '●' : '○';
+  text(hearts, W - 20, 34, 22, 'right');
+  let obj = '';
+  if (s.type === 'rescue') obj = 'মুক্ত: ' + bn(G.freed) + '/৫';
+  if (s.type === 'survive') obj = 'বাকি: ' + bn(Math.max(0, Math.ceil(G.left))) + ' সে.';
+  if (s.type === 'cells') obj = 'কক্ষ বাকি: ' + bn(G.cells.length);
+  if (obj) text(obj, W / 2, 34, 20, 'center');
+  if (G.boss) {
+    const b = G.boss; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 200, 48, 400, 12);
+    ctx.fillStyle = '#fff'; ctx.fillRect(W / 2 - 200, 48, 400 * Math.max(0, b.hp) / b.max, 12);
+  }
+  // ঝাঁপের প্রস্তুতি
+  ctx.fillStyle = '#333'; ctx.fillRect(20, H - 18, 120, 6);
+  ctx.fillStyle = '#fff'; ctx.fillRect(20, H - 18, 120 * (1 - p.dashCd / 1.1), 6);
+  text('ঝাঁপ', 148, H - 11, 13);
+
+  // জয়স্টিক
+  if (joy.id !== null) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2 * dpr;
+    ctx.beginPath(); ctx.arc(joy.x0 * dpr, joy.y0 * dpr, 50 * dpr, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    const dx = joy.x - joy.x0, dy = joy.y - joy.y0, l = Math.min(50, Math.hypot(dx, dy)), a = Math.atan2(dy, dx);
+    ctx.beginPath(); ctx.arc((joy.x0 + Math.cos(a) * l) * dpr, (joy.y0 + Math.sin(a) * l) * dpr, 22 * dpr, 0, 6.283); ctx.fill();
+  }
+}
+
+/* ---------- মূল লুপ ---------- */
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (state === 'play') update(dt);
+  else if (state === 'ending' && G) { G.t += dt; G.parts.forEach(q => { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; }); G.parts = G.parts.filter(q => q.life > 0); }
+  draw();
+  requestAnimationFrame(loop);
+}
+menu();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
