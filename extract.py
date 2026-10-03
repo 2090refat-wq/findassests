@@ -69,6 +69,18 @@ def merge_two_line(lines):
                     out.append(" ".join(ta[:3]) + " " + b)
                     i = j + 1
                     continue
+        # continuation: identity line with no decimal amount, amounts printed on the next (wrapped) line
+        if (len(ta) >= 4 and INT.match(ta[0]) and re.match(r"^(19|20)\d\d$", ta[1]) and re.match(r"^\d{5,9}$", ta[2])
+                and not any(MONEY.match(t) for t in ta)):
+            j = i + 1
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            if j < len(lines):
+                tb = lines[j].split()
+                if tb and not (INT.match(tb[0]) and len(tb) > 1 and re.match(r"^(19|20)\d\d$", tb[1])) and any(MONEY.match(t) for t in tb):
+                    out.append(a.rstrip() + " " + lines[j].strip())
+                    i = j + 1
+                    continue
         out.append(a)
         i += 1
     return out
@@ -235,11 +247,16 @@ def process(job):
                         rows.append(r)
                         continue
                     low = ln.lower()
+                    if "total" in low and re.search(r"#{3,}", ln):
+                        stats["unreadable_totals"] = stats.get("unreadable_totals", 0) + 1
+                        continue
                     if "total" in low:
                         ms = [num(t) for t in ln.split() if MONEY.match(t) or INT.match(t)]
                         ms = [x for x in ms if x is not None]
                         if ms:
                             totals.append((("grand" in low), ms[-1]))
+                            if len(ms) >= 2:
+                                stats.setdefault("total_lines", []).append(ms[:12])
                         continue
                     # heading lines update context
                     if len(ln.split()) <= 14 and not any(BO.match(t) for t in ln.split()):

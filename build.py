@@ -4,7 +4,7 @@ import csv, json, re, sqlite3, itertools
 from pathlib import Path
 from collections import defaultdict, Counter
 import pandas as pd
-from totalcheck import score_raw, candidates
+from totalcheck import score_raw, candidates, check, year_hits
 from unidecode import unidecode
 from rapidfuzz import fuzz
 
@@ -46,6 +46,42 @@ def year_start(y):
     return int(m.group(0)) if m else None
 
 
+
+NUMTOK = re.compile(r"^\(?-?\d[\d,]*(\.\d+)?\)?$")
+
+
+def resolve_ambiguous(raw, st, extra_totals):
+    """Stock rows with several numbers after the name: pick first/last number only if that makes the document total match the printed total."""
+    amb = raw["issues"].str.contains("stock_ambiguous_numbers") & raw["shares"].isna()
+    if not amb.any():
+        return raw
+    runs = []
+    for idx in raw.index[amb]:
+        line, name = raw.at[idx, "line"], raw.at[idx, "holder_name_raw"]
+        p = line.find(name)
+        tail = line[p + len(name):].split() if p >= 0 else []
+        run = []
+        for t in tail:
+            if NUMTOK.match(t):
+                run.append(float(t.replace(",", "").strip("()")))
+            else:
+                break
+        runs.append((idx, run))
+    known = raw.loc[~amb, "shares"].sum()
+    cands = candidates(st, extra_totals)
+    if not cands:
+        return raw
+    for name, pick in (("last", lambda r: r[-1]), ("first", lambda r: r[0])):
+        vals = {i: pick(r) for i, r in runs if r}
+        total = known + sum(vals.values())
+        status, _ = check(total, cands)
+        if status == "match":
+            for i, v in vals.items():
+                raw.at[i, "shares"] = v
+                raw.at[i, "issues"] = raw.at[i, "issues"].replace("stock_ambiguous_numbers", f"shares_{name}_number_verified_by_total")
+            return raw
+    return raw
+
 # ---------- documents + dividends ----------
 docs, rows, settled = [], [], []
 for doc_id, m in man.items():
@@ -70,13 +106,23 @@ for doc_id, m in man.items():
         docs.append(d); continue
     st = json.loads(sp.read_text())
     method = "text_regex+ocr" if st.get("ocr") and st.get("ocr_rows") else "text_regex"
-    rpc = ROOT / "extracted/raw_col" / f"{doc_id}.csv"
-    if rpc.exists():
-        sg, sc = score_raw(rp, st), score_raw(rpc, st)
-        use_col = (sc[0] == "match" and sg[0] != "match") or (sg[0] != "match" and sc[0] != "n/a" and sc[1] < sg[1] * 0.5 and sc[3] > 0)
-        if use_col:
-            rp = rpc
-            method = "column_position"
+    best_sc = score_raw(rp, st)
+    ry = ROOT / "extracted" / "raw_years" / f"{doc_id}.csv"
+    if ry.exists():
+        sy = score_raw(ry, st)
+        hits, nyears = year_hits(ry, st)
+        if sy[3] > 0 and nyears >= 2 and ((hits == nyears) or (sy[0] == "match" and best_sc[0] != "match")):
+            rp, best_sc, method = ry, sy, "year_columns"
+    for alt_dir, alt_name in (("raw_col", "column_position"), ("raw_pair", "paired_lines")):
+        if method == "year_columns":
+            break
+        alt = ROOT / "extracted" / alt_dir / f"{doc_id}.csv"
+        if not alt.exists():
+            continue
+        sa = score_raw(alt, st)
+        if sa[3] > 0 and ((sa[0] == "match" and best_sc[0] != "match") or
+                          (best_sc[0] != "match" and sa[0] != "n/a" and sa[1] < best_sc[1])):
+            rp, best_sc, method = alt, sa, alt_name
     raw = pd.read_csv(rp, dtype=str, keep_default_na=False)
     d["extraction_method"] = method
     d["rows_extracted"] = len(raw)
@@ -88,6 +134,7 @@ for doc_id, m in man.items():
     tot_mask = raw["holder_name_raw"].str.match(r"(?i)^\W*(grand\s+|sub\s*-?\s*)?total\b")
     extra_totals = [float(v) for v in raw.loc[tot_mask, "net_amount"].fillna(raw.loc[tot_mask, "shares"]).dropna()]
     raw = raw[~tot_mask].copy()
+    raw = resolve_ambiguous(raw, st, extra_totals)
     addr = raw["holder_name_raw"].str.upper().str.contains(r"\b(?:FLOOR|HOUSE|ROAD|APT|FLAT|BUILDING|MANSION|TOWER|AVENUE)\b", regex=True)
     for mask, tag in ((raw["net_amount"] > 1_000_000, "implausible_amount"), (addr, "name_looks_like_address")):
         raw.loc[mask, "issues"] = raw.loc[mask, "issues"].apply(lambda x, t=tag: (x + ";" + t).strip(";"))
@@ -106,6 +153,14 @@ for doc_id, m in man.items():
         else:
             d["total_check"] = "mismatch"
             issues.append(f"extracted {ext:,.2f} vs nearest printed total {best}")
+            vcol = "shares" if is_stock else "net_amount"
+            ys = raw.groupby("dividend_year")[vcol].sum()
+            hit = [y for y, v in ys.items() if v and any(abs(v - c) <= 0.005 * c for c in cands)]
+            miss = [y for y in ys.index if y not in hit and ys[y]]
+            if len(hit) >= 2 and len(miss) <= st.get("unreadable_totals", 0):
+                d["total_check"] = "match"
+                issues.pop()
+                issues.append(f"per-year totals match for {len(hit)} years; {len(miss)} year total(s) unreadable ('#####') in the PDF")
     else:
         d["total_check"] = "no_total_printed"
     bad = raw["issues"].str.replace("amount_repaired", "", regex=False).str.strip(";").ne("")

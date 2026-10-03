@@ -23,3 +23,17 @@ def run(doc, n=10, pages=None):
     for i,s in tot[:4]+tot[-3:]: print('   TOT p%d: %s'%(i,s))
 if __name__=='__main__':
     for d in sys.argv[1:]: run(d)
+
+def years(doc):
+    import pandas as pd
+    from totalcheck import candidates
+    st=json.load(open(f'extracted/stats/{doc}.json'))
+    df=pd.read_csv(f'extracted/raw/{doc}.csv',dtype=str,keep_default_na=False)
+    col='shares' if df.dividend_type.isin(['stock','right']).mean()>0.5 else 'net_amount'
+    df['v']=pd.to_numeric(df[col],errors='coerce')
+    ys=df.groupby('dividend_year').v.agg(['sum','count'])
+    c=sorted(candidates(st))
+    for y,r in ys.iterrows():
+        near=min(c,key=lambda x:abs(x-r['sum'])) if c else None
+        flag='OK ' if near and abs(near-r['sum'])<=0.005*near else 'BAD'
+        print(f'  {flag} {y:<10} rows={int(r["count"]):<6} sum={r["sum"]:>14,.2f} nearest_printed={near}')

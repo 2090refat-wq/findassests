@@ -129,8 +129,87 @@ def process(doc_id):
     return doc_id, len(rows)
 
 
+YCOL = re.compile(r"(?:(Bonus|Right|Cash|Stock|Fraction)[\s_-]*)?((?:19|20)\d\d(?:\s*[-/]\s*\d{2,4})?)", re.I)
+
+
+def find_year_cols(lines):
+    for ln in lines[:40]:
+        if re.search(r"\b\d{16}\b", ln):
+            continue
+        ms = [m for m in YCOL.finditer(ln)]
+        if len(ms) >= 2 and sum(1 for t in ln.split() if NUM.match(t) and len(t.replace(",", "")) > 4) == 0:
+            cols = []
+            for m in ms:
+                kind = (m.group(1) or "").lower()
+                cols.append((re.sub(r"\s+", "", m.group(2)), kind, (m.start() + m.end()) / 2.0))
+            return cols
+    return None
+
+
+def process_years(doc_id):
+    p = ROOT / man[doc_id]["local_path"]
+    try:
+        npg = len(__import__("pypdf").PdfReader(str(p)).pages)
+    except Exception:
+        npg = 0
+    base = X.dtype_of(man[doc_id]["title"])
+    rows, cols, seen = [], None, False
+    for a in range(1, max(npg, 1) + 1, 100):
+        b = min(a + 99, npg)
+        txt = subprocess.run(["pdftotext", "-layout", "-f", str(a), "-l", str(b), str(p), "-"],
+                             capture_output=True, text=True, errors="replace").stdout.translate(X.BN)
+        pages = txt.split("\f")
+        for i in range(b - a + 1):
+            lines = (pages[i] if i < len(pages) else "").split("\n")
+            c2 = find_year_cols(lines)
+            if c2:
+                cols, seen = c2, True
+            if not cols:
+                continue
+            rn = 0
+            for ln in lines:
+                if not ln.strip() or ("total" in ln.lower() and not re.search(r"\b\d{16}\b", ln)):
+                    continue
+                kind0 = base
+                r = X.parse_line(ln.strip(), {"year": "", "dtype": kind0}, need_amount=False)
+                bo = re.search(r"\b(\d{16})\b", ln)
+                if r is None and not bo:
+                    continue
+                cells = []
+                for m in re.finditer(r"\S+", ln):
+                    tk = m.group()
+                    if not NUM.match(tk):
+                        continue
+                    ctr = (m.start() + m.end()) / 2.0
+                    j = min(range(len(cols)), key=lambda k: abs(cols[k][2] - ctr))
+                    if abs(cols[j][2] - ctr) <= 9 and "." in tk or (abs(cols[j][2] - ctr) <= 9 and kind0 in ("stock", "right")):
+                        cells.append((j, X.num(tk)))
+                for j, v in cells:
+                    if not v:
+                        continue
+                    label, kind, _ = cols[j]
+                    dt = {"bonus": "stock", "right": "right", "stock": "stock", "fraction": "fraction", "cash": "cash"}.get(kind, kind0)
+                    rr = dict(r) if r else dict(folio_or_bo_raw=bo.group(1), bo_id=bo.group(1), folio_no="", holder_name_raw="",
+                                                warrant_no="", shares=None, gross_amount=None, tax_amount=None, net_amount=None, issues="name_missing")
+                    rr.update(dividend_year=label, dividend_type=dt, line=ln.strip()[:300])
+                    rr["issues"] = ";".join(x for x in (rr.get("issues", "").replace("stock_ambiguous_numbers", "").replace("amount_repaired", "").replace("gross_tax_net_mismatch", "").split(";") + ["year_column"]) if x)
+                    rr["shares"] = v if dt in ("stock", "right") else None
+                    rr["net_amount"] = None if dt in ("stock", "right") else v
+                    rr["gross_amount"] = rr["tax_amount"] = None
+                    rn += 1
+                    rr.update(doc_id=doc_id, page=a + i, row_on_page=rn)
+                    rows.append(rr)
+    if not seen:
+        return doc_id, -1
+    outd = ROOT / "extracted" / "raw_years"; outd.mkdir(exist_ok=True)
+    with open(outd / f"{doc_id}.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=X.FIELDS, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
+    return doc_id, len(rows)
+
+
 if __name__ == "__main__":
     ids = sys.argv[1].split(",")
+    fn = process_years if len(sys.argv) > 2 and sys.argv[2] == "years" else process
     with Pool(os.cpu_count() or 2) as pool:
-        for d, n in pool.imap_unordered(process, ids):
+        for d, n in pool.imap_unordered(fn, ids):
             print(d, n, flush=True)
