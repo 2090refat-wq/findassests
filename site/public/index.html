@@ -6,8 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="Search published unclaimed dividend lists of listed companies and CMSF by BO ID or folio number.">
 <meta name="theme-color" content="#00563f">
-<title>Unclaimed Dividend Lookup</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2300563f'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='15' fill='white' text-anchor='middle'%3EUD%3C/text%3E%3C/svg%3E">
+<title>Claim Your Dividends</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2300563f'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='15' fill='white' text-anchor='middle'%3ECD%3C/text%3E%3C/svg%3E">
 <link rel="preload" href="fonts/noto-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/noto-sans-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
@@ -211,7 +211,7 @@ footer p:last-child{margin:0}
 
 <header class="hdr">
   <div class="width">
-    <a class="svc" href="./"><span data-i18n="brand">Unclaimed Dividend Lookup</span><small data-i18n="brand2">অদাবিকৃত লভ্যাংশ অনুসন্ধান</small></a>
+    <a class="svc" href="./"><span data-i18n="brand">Claim Your Dividends</span><small data-i18n="brand2">আপনার লভ্যাংশ দাবি করুন</small></a>
     <ul class="lang" aria-label="Language / ভাষা">
       <li><button type="button" data-lang="en" lang="en" aria-current="true">English</button></li>
       <li><button type="button" data-lang="bn" lang="bn" aria-current="false">বাংলা</button></li>
@@ -308,7 +308,7 @@ const $ = (id) => document.getElementById(id);
 const STR = {
   en: {
     skip:"Skip to main content", tag:"PROTOTYPE", tagline:"This is a new service. Figures come from published lists and must be confirmed with the company.",
-    brand:"Unclaimed Dividend Lookup", brand2:"অদাবিকৃত লভ্যাংশ অনুসন্ধান",
+    brand:"Claim Your Dividends", brand2:"আপনার লভ্যাংশ দাবি করুন",
     h1:"Check for unclaimed dividends",
     lead:"Search the unclaimed dividend lists that listed companies and the Capital Market Stabilization Fund (CMSF) have published, using a BO ID or a folio number.",
     coverage:"Covers {c} companies and {r} records from {d} published lists. Last updated {u}.",
@@ -351,11 +351,11 @@ const STR = {
     q4:"What happens to your search", a4:"The numbers you search for are not stored. To prevent misuse, the network address and time of each search are kept for up to two days.",
     q5:"If nothing is found", a5:"That does not mean nothing is owed. Some companies publish only folio numbers, some lists could not be read automatically, and some companies have not published a list. Ask the company's share department to be sure.",
     disc:"This is an independent prototype, not an official government service. Information is compiled from publicly published lists. It may be incomplete or out of date, and amounts may already have been paid. Always confirm with the company or CMSF before relying on any figure.",
-    updated:"Data last updated {d}.", print_h:"Unclaimed Dividend Lookup", printed:"Printed {d}"
+    updated:"Data last updated {d}.", print_h:"Claim Your Dividends", printed:"Printed {d}"
   },
   bn: {
     skip:"মূল অংশে যান", tag:"প্রোটোটাইপ", tagline:"এটি একটি নতুন সেবা। তথ্যগুলো প্রকাশিত তালিকা থেকে নেওয়া; কোম্পানির সাথে যাচাই করে নিন।",
-    brand:"অদাবিকৃত লভ্যাংশ অনুসন্ধান", brand2:"Unclaimed Dividend Lookup",
+    brand:"আপনার লভ্যাংশ দাবি করুন", brand2:"Claim Your Dividends",
     h1:"অদাবিকৃত লভ্যাংশ খুঁজুন",
     lead:"তালিকাভুক্ত কোম্পানি ও ক্যাপিটাল মার্কেট স্ট্যাবিলাইজেশন ফান্ড (সিএমএসএফ) প্রকাশিত অদাবিকৃত লভ্যাংশের তালিকায় বিও আইডি বা ফোলিও নম্বর দিয়ে খুঁজুন।",
     coverage:"{d}টি প্রকাশিত তালিকা থেকে {c}টি কোম্পানির {r} রেকর্ড অন্তর্ভুক্ত। সর্বশেষ হালনাগাদ {u}।",
@@ -398,7 +398,7 @@ const STR = {
     q4:"আপনার অনুসন্ধানের তথ্য", a4:"আপনি যে নম্বর খোঁজেন তা সংরক্ষণ করা হয় না। অপব্যবহার রোধে প্রতিটি অনুসন্ধানের নেটওয়ার্ক ঠিকানা ও সময় সর্বোচ্চ দুই দিন রাখা হয়।",
     q5:"কিছু পাওয়া না গেলে", a5:"এর মানে এই নয় যে কোনো পাওনা নেই। কিছু কোম্পানি শুধু ফোলিও নম্বর প্রকাশ করে, কিছু তালিকা স্বয়ংক্রিয়ভাবে পড়া যায়নি, আর কিছু কোম্পানি তালিকা প্রকাশ করেনি। নিশ্চিত হতে কোম্পানির শেয়ার বিভাগে জিজ্ঞাসা করুন।",
     disc:"এটি একটি স্বতন্ত্র প্রোটোটাইপ, কোনো সরকারি সেবা নয়। তথ্যগুলো প্রকাশ্যে প্রকাশিত তালিকা থেকে সংকলিত; এগুলো অসম্পূর্ণ বা পুরোনো হতে পারে এবং অর্থ ইতোমধ্যে পরিশোধ হয়ে থাকতে পারে। কোনো তথ্যের ওপর নির্ভর করার আগে কোম্পানি বা সিএমএসএফের সাথে যাচাই করুন।",
-    updated:"সর্বশেষ হালনাগাদ {d}।", print_h:"অদাবিকৃত লভ্যাংশ অনুসন্ধান", printed:"প্রিন্টের সময় {d}"
+    updated:"সর্বশেষ হালনাগাদ {d}।", print_h:"আপনার লভ্যাংশ দাবি করুন", printed:"প্রিন্টের সময় {d}"
   }
 };
 let lang = "en";
