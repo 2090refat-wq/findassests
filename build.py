@@ -4,6 +4,7 @@ import csv, json, re, sqlite3, itertools
 from pathlib import Path
 from collections import defaultdict, Counter
 import pandas as pd
+from totalcheck import score_raw, candidates
 from unidecode import unidecode
 from rapidfuzz import fuzz
 
@@ -68,12 +69,22 @@ for doc_id, m in man.items():
                  issues="not extracted" + ("; scanned, needs OCR" if t.get("pdf_kind") == "scanned" else ""))
         docs.append(d); continue
     st = json.loads(sp.read_text())
-    raw = pd.read_csv(rp, dtype=str, keep_default_na=False)
     method = "text_regex+ocr" if st.get("ocr") and st.get("ocr_rows") else "text_regex"
+    rpc = ROOT / "extracted/raw_col" / f"{doc_id}.csv"
+    if rpc.exists():
+        sg, sc = score_raw(rp, st), score_raw(rpc, st)
+        use_col = (sc[0] == "match" and sg[0] != "match") or (sg[0] != "match" and sc[0] != "n/a" and sc[1] < sg[1] * 0.5 and sc[3] > 0)
+        if use_col:
+            rp = rpc
+            method = "column_position"
+    raw = pd.read_csv(rp, dtype=str, keep_default_na=False)
     d["extraction_method"] = method
     d["rows_extracted"] = len(raw)
     for c in ("shares", "gross_amount", "tax_amount", "net_amount"):
         raw[c] = pd.to_numeric(raw[c], errors="coerce")
+    big = (raw["net_amount"].abs() >= 1e9) | (raw["shares"].abs() >= 1e9)
+    raw.loc[big, ["net_amount", "shares"]] = None
+    raw.loc[big, "issues"] = raw.loc[big, "issues"].apply(lambda x: (x + ";unreadable_amount").strip(";"))
     tot_mask = raw["holder_name_raw"].str.match(r"(?i)^\W*(grand\s+|sub\s*-?\s*)?total\b")
     extra_totals = [float(v) for v in raw.loc[tot_mask, "net_amount"].fillna(raw.loc[tot_mask, "shares"]).dropna()]
     raw = raw[~tot_mask].copy()
@@ -87,9 +98,7 @@ for doc_id, m in man.items():
     totals = [v for v in (st.get("totals") or []) + extra_totals if v >= 100]  # drop header noise such as "Total Balance 7"
     issues = []
     if totals:
-        cands = {max(totals), round(sum(totals), 2), round(sum(totals) - max(totals), 2),
-                 round(sum(totals) / 2, 2)}
-        cands = {c for c in cands if c}
+        cands = candidates(st, extra_totals)
         best = min(cands, key=lambda c: abs(c - ext)) if cands else None
         d["stated_total"] = best
         if best and ext and abs(best - ext) <= 0.005 * best:
@@ -147,6 +156,12 @@ for doc_id, m in man.items():
             currency="BDT", holder_id="", match_method="", match_score=None, settled_flag=0,
             issues=";".join(iss), raw_row_json=json.dumps({"line": r["line"]})))
 
+docs_df0 = pd.DataFrame(docs)
+import os
+if os.environ.get("DOCS_ONLY"):
+    docs_df0.to_csv(OUT / "documents_report.csv", index=False)
+    print(docs_df0.status.value_counts().to_dict(), docs_df0.total_check.value_counts().to_dict())
+    raise SystemExit
 div = pd.DataFrame(rows)
 print("dividend rows:", len(div))
 

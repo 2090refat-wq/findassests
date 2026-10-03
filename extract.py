@@ -29,37 +29,49 @@ def num(t):
 
 import itertools
 def repair_amounts(tail):
-    """Return (decimals as strings, repaired flag, verified triple or None). Merge split fragments only if gross-tax=net proves it."""
+    """Find gross, tax, net among the numeric tokens after the name by arithmetic (gross - tax [- extra] = net), whole numbers included.
+    Returns (decimals, repaired_flag, (gross, tax, net) | None)."""
     toks = []
     for t in tail:
         if toks and (t.startswith(",") or t.startswith(".")) and re.match(r"^\d", toks[-1]):
             toks[-1] += t
         else:
             toks.append(t)
-    pairs = [i for i in range(len(toks) - 1) if INT.match(toks[i]) and MONEY.match(toks[i + 1]) and len(toks[i]) <= 3]
-    pairs = pairs[:5]
-    best = None
-    for r in range(len(pairs) + 1):
-        for combo in itertools.combinations(pairs, r):
-            if any(b - a == 1 for a, b in zip(combo, combo[1:])):
-                continue
-            out, skip = [], set()
-            for i in combo:
-                skip.add(i + 1)
-            cur = []
-            i = 0
-            while i < len(toks):
-                if i in combo:
-                    cur.append(toks[i] + toks[i + 1]); i += 2
-                else:
-                    cur.append(toks[i]); i += 1
-            dec = [num(t) for t in cur if MONEY.match(t)]
-            for w in range(len(dec) - 2):
-                g, tx, n = dec[w], dec[w + 1], dec[w + 2]
-                if g is not None and abs(g - tx - n) <= 0.05 and g > 0:
-                    return dec, bool(combo), (g, tx, n)
+    vals = [num(t) for t in toks if MONEY.match(t) or INT.match(t)]
+    vals = [v for v in vals if v is not None]
+    for w in range(len(vals) - 3, -1, -1):          # size-3 windows, last first
+        g, tx, n = vals[w], vals[w + 1], vals[w + 2]
+        if g > 0 and tx > 0 and n > 0 and abs(g - tx - n) <= 0.05:
+            return [v for v in vals if True], False, (g, tx, n)
+    for w in range(len(vals) - 4, -1, -1):          # size-4: gross - tax - extra = net
+        g, t1, t2, n = vals[w], vals[w + 1], vals[w + 2], vals[w + 3]
+        if g > 0 and n > 0 and t1 >= 0 and t2 >= 0 and (t1 > 0 or t2 > 0) and abs(g - t1 - t2 - n) <= 0.05:
+            return vals, False, (g, t1 + t2, n)
     dec = [num(t) for t in toks if MONEY.match(t)]
     return dec, False, None
+
+
+def merge_two_line(lines):
+    """Records printed over two lines: 'SL YEAR ID ... gross' then 'NAME ... shares tax net'. Merge to 'SL YEAR ID NAME ... shares tax net'."""
+    out, i = [], 0
+    while i < len(lines):
+        a = lines[i]
+        ta = a.split()
+        if (len(ta) >= 3 and INT.match(ta[0]) and re.match(r"^(19|20)\d\d$", ta[1]) and re.match(r"^\d{4,}$", ta[2])
+                and sum(1 for t in ta[3:] if MONEY.match(t)) <= 1):
+            j = i + 1
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            if j < len(lines):
+                b = lines[j].strip()
+                tb = b.split()
+                if tb and re.match(r"^[A-Za-z]", tb[0]) and any(MONEY.match(t) for t in tb) and not any(BO.match(t) for t in tb):
+                    out.append(" ".join(ta[:3]) + " " + b)
+                    i = j + 1
+                    continue
+        out.append(a)
+        i += 1
+    return out
 
 def dtype_of(text, default="cash"):
     s = text.lower()
@@ -72,7 +84,7 @@ def dtype_of(text, default="cash"):
     return default
 
 
-def parse_line(line, ctx):
+def parse_line(line, ctx, need_amount=True):
     """Return (row dict | None). ctx has year, dtype."""
     toks = line.split()
     if len(toks) < 3:
@@ -156,11 +168,11 @@ def parse_line(line, ctx):
             net = decs[-1]
             if len(decs) >= 3:
                 issues.append("gross_tax_net_mismatch")
-        else:
+        elif need_amount:
             return None
     if shares == -1.0:
         shares = None
-    elif shares is None and net is None:
+    elif shares is None and net is None and need_amount:
         return None
     if len(name) < 2:
         return None
@@ -197,7 +209,7 @@ def process(job):
         with pdfplumber.open(path) as pdf:
             stats["pages"] = len(pdf.pages)
             npages = len(pdf.pages)
-            use_poppler = npages > 150
+            use_poppler = True
             ctx = {"year": "", "dtype": dtype_of(title)}
             first = True
             totals = []
@@ -206,7 +218,7 @@ def process(job):
                 if len(text.strip()) < 40:
                     stats["textless_pages"] += 1
                     continue
-                lines = text.split("\n")
+                lines = merge_two_line(text.split("\n"))
                 if first:
                     head = " ".join(l for l in lines[:8] if not any(BO.match(t) for t in l.split()) and not MONEY.search(l))
                     ctx["dtype"] = dtype_of(title + " " + head, ctx["dtype"])
