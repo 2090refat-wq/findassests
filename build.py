@@ -69,7 +69,7 @@ for doc_id, m in man.items():
         docs.append(d); continue
     st = json.loads(sp.read_text())
     raw = pd.read_csv(rp, dtype=str, keep_default_na=False)
-    method = "ocr" if st.get("ocr") else "text_regex"
+    method = "text_regex+ocr" if st.get("ocr") and st.get("ocr_rows") else "text_regex"
     d["extraction_method"] = method
     d["rows_extracted"] = len(raw)
     for c in ("shares", "gross_amount", "tax_amount", "net_amount"):
@@ -77,10 +77,10 @@ for doc_id, m in man.items():
     is_stock = (raw["dividend_type"].isin(["stock", "right"])).mean() > 0.5 if len(raw) else False
     ext = float(raw["shares"].sum()) if is_stock else float(raw["net_amount"].sum())
     d["extracted_total"] = round(ext, 2)
-    totals = st.get("totals") or []
+    totals = [v for v in (st.get("totals") or []) if v >= 100]  # drop header noise such as "Total Balance 7"
     issues = []
     if totals:
-        cands = {st.get("stated_total"), max(totals), round(sum(totals), 2), round(sum(totals) - max(totals), 2),
+        cands = {max(totals), round(sum(totals), 2), round(sum(totals) - max(totals), 2),
                  round(sum(totals) / 2, 2)}
         cands = {c for c in cands if c}
         best = min(cands, key=lambda c: abs(c - ext)) if cands else None
@@ -108,9 +108,9 @@ for doc_id, m in man.items():
     ok = (d["total_check"] in ("match", "no_total_printed") and flagged < 0.02 and not st.get("textless_pages")
           and st["unparsed_idlike"] <= max(2, 0.01 * len(raw)) and len(raw) > 0)
     d["status"] = "parsed" if ok else "partial"
-    if method == "ocr":
+    if st.get("ocr_rows"):
         d["status"] = "partial"
-        issues.append("ocr: needs human check")
+        issues.append(f"{st['ocr_rows']} rows from OCR: needs human check")
     d["issues"] = "; ".join(issues)
     docs.append(d)
 
@@ -130,8 +130,6 @@ for doc_id, m in man.items():
         iss = [x for x in r["issues"].split(";") if x]
         if inst:
             iss.append("institution")
-        if method == "ocr":
-            iss.append("ocr")
         rows.append(dict(
             dividend_id=f"{doc_id}-p{r['page']}-r{r['row_on_page']}", doc_id=doc_id, company=m["company"],
             page=int(r["page"]), row_on_page=int(r["row_on_page"]), dividend_year=r["dividend_year"],

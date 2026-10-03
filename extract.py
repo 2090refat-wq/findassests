@@ -169,6 +169,22 @@ def parse_line(line, ctx):
                 tax_amount=tax, net_amount=net, issues=";".join(issues), line=line[:300])
 
 
+
+import subprocess
+def page_source(pdf, path, npages, use_poppler):
+    """Yield page text. Big PDFs go through poppler pdftotext in 100-page chunks (pdfplumber exhausts memory)."""
+    if not use_poppler:
+        for p in pdf.pages:
+            yield p.extract_text() or ""
+        return
+    for a in range(1, npages + 1, 100):
+        b = min(a + 99, npages)
+        out = subprocess.run(["pdftotext", "-layout", "-f", str(a), "-l", str(b), str(path), "-"],
+                             capture_output=True, text=True, errors="replace").stdout
+        pages = out.split("\f")
+        for i in range(b - a + 1):
+            yield pages[i] if i < len(pages) else ""
+
 def process(job):
     doc_id, path, role, title = job
     sp = STAT / f"{doc_id}.json"
@@ -180,11 +196,13 @@ def process(job):
     try:
         with pdfplumber.open(path) as pdf:
             stats["pages"] = len(pdf.pages)
+            npages = len(pdf.pages)
+            use_poppler = npages > 150
             ctx = {"year": "", "dtype": dtype_of(title)}
             first = True
             totals = []
-            for pno, page in enumerate(pdf.pages, 1):
-                text = (page.extract_text() or "").translate(BN)
+            for pno, page in enumerate(page_source(pdf, path, npages, use_poppler), 1):
+                text = page.translate(BN)
                 if len(text.strip()) < 40:
                     stats["textless_pages"] += 1
                     continue
