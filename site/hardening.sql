@@ -1,3 +1,4 @@
+-- SUPERSEDED by audit_fixes.sql. Do not run this file.
 -- Hardening for the shareholder lookup (run once in the Supabase SQL editor of project `shareholder-lookup`).
 -- Adds: lockout after repeated wrong codes or repeated "not found" probing, per-visitor and global daily caps,
 -- a 5 s time limit per lookup. Safe to re-run.
