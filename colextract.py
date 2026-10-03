@@ -141,7 +141,7 @@ def find_year_cols(lines):
             cols = []
             for m in ms:
                 kind = (m.group(1) or "").lower()
-                cols.append((re.sub(r"\s+", "", m.group(2)), kind, (m.start() + m.end()) / 2.0))
+                cols.append((re.sub(r"\s+", "", m.group(2)), kind, float(m.end())))
             return cols
     return None
 
@@ -180,12 +180,12 @@ def process_years(doc_id):
                     tk = m.group()
                     if not NUM.match(tk):
                         continue
-                    ctr = (m.start() + m.end()) / 2.0
+                    ctr = float(m.end())
                     j = min(range(len(cols)), key=lambda k: abs(cols[k][2] - ctr))
-                    if abs(cols[j][2] - ctr) <= 9 and "." in tk or (abs(cols[j][2] - ctr) <= 9 and kind0 in ("stock", "right")):
+                    if abs(cols[j][2] - ctr) <= 7 and ("." in tk or cols[j][1] in ("bonus", "right", "stock") or kind0 in ("stock", "right")):
                         cells.append((j, X.num(tk)))
                 for j, v in cells:
-                    if not v:
+                    if not v or v > 1_000_000:      # phone numbers / glued digits from address text
                         continue
                     label, kind, _ = cols[j]
                     dt = {"bonus": "stock", "right": "right", "stock": "stock", "fraction": "fraction", "cash": "cash"}.get(kind, kind0)

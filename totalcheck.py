@@ -1,15 +1,18 @@
 import json
 def candidates(st, extra=()):
-    t = [v for v in (st.get("totals") or []) + list(extra) if v and v >= 100]
+    allv = [v for v in (st.get("totals") or []) + list(extra) if v and v >= 100]
+    t = sorted({round(v, 2) for v in allv})            # distinct values: a total repeated on every page is one total
     c = set(t)
     for nums in (st.get("total_lines") or [])[:300]:      # e.g. one "Total" line with a column per year
         nums = [v for v in nums if v and v >= 100]
-        c |= set(nums)
+        c |= set(round(v, 2) for v in nums)
         if len(nums) >= 2:
             c.add(round(sum(nums), 2))
     if t:
         c |= {round(sum(t), 2), round(sum(t) - max(t), 2), round(sum(t) / 2, 2)}
     return c
+
+
 def check(ext, cands, tol=0.005):
     if not cands:
         return "no_total_printed", None
@@ -51,3 +54,21 @@ def year_hits(path, st):
     cands = candidates(st)
     hit = [y for y, v in ys.items() if any(abs(v - c) <= 0.005 * c for c in cands)]
     return len(hit), len(ys)
+
+
+def year_err(path, st):
+    """Median relative error and share of years within 6% of a printed total, for a per-year extraction."""
+    import pandas as pd
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    if not len(df):
+        return 9e9, 0.0, 0
+    stock = df.dividend_type.isin(["stock", "right"]).mean() > 0.5
+    df["v"] = pd.to_numeric(df["shares" if stock else "net_amount"], errors="coerce")
+    ys = df.groupby("dividend_year")["v"].sum()
+    ys = ys[ys > 0]
+    cands = sorted(candidates(st))
+    if not cands or not len(ys):
+        return 9e9, 0.0, len(ys)
+    errs = [min(abs(v - c) / c for c in cands if c) for v in ys]
+    errs.sort()
+    return errs[len(errs) // 2], sum(1 for e in errs if e <= 0.06) / len(errs), len(ys)

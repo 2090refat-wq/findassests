@@ -47,6 +47,19 @@ def repair_amounts(tail):
         g, t1, t2, n = vals[w], vals[w + 1], vals[w + 2], vals[w + 3]
         if g > 0 and n > 0 and t1 >= 0 and t2 >= 0 and (t1 > 0 or t2 > 0) and abs(g - t1 - t2 - n) <= 0.05:
             return vals, False, (g, t1 + t2, n)
+    # non-adjacent: a rate / share column may sit between the amounts (gross, rate, tax, net)
+    for ni in range(len(vals) - 1, 1, -1):
+        n = vals[ni]
+        if n <= 0:
+            continue
+        for ti in range(ni - 1, 0, -1):
+            tx = vals[ti]
+            if tx <= 0:
+                continue
+            for gi in range(ti - 1, -1, -1):
+                g = vals[gi]
+                if g > 0 and ni - gi <= 5 and abs(g - tx - n) <= 0.05:
+                    return vals, False, (g, tx, n)
     dec = [num(t) for t in toks if MONEY.match(t)]
     return dec, False, None
 
@@ -181,7 +194,11 @@ def parse_line(line, ctx, need_amount=True):
             if len(decs) >= 3:
                 issues.append("gross_tax_net_mismatch")
         elif need_amount:
-            return None
+            ints_ = [t for t in tail if INT.match(t)]
+            if not ints_:
+                return None
+            net = num(ints_[-1])            # whole-number amount (no decimals printed); confirmed only by the document total
+            issues.append("int_amount")
     if shares == -1.0:
         shares = None
     elif shares is None and net is None and need_amount:

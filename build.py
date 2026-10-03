@@ -4,7 +4,7 @@ import csv, json, re, sqlite3, itertools
 from pathlib import Path
 from collections import defaultdict, Counter
 import pandas as pd
-from totalcheck import score_raw, candidates, check, year_hits
+from totalcheck import score_raw, candidates, check, year_hits, year_err
 from unidecode import unidecode
 from rapidfuzz import fuzz
 
@@ -106,13 +106,18 @@ for doc_id, m in man.items():
         docs.append(d); continue
     st = json.loads(sp.read_text())
     method = "text_regex+ocr" if st.get("ocr") and st.get("ocr_rows") else "text_regex"
+    year_note = ""
     best_sc = score_raw(rp, st)
     ry = ROOT / "extracted" / "raw_years" / f"{doc_id}.csv"
     if ry.exists():
         sy = score_raw(ry, st)
         hits, nyears = year_hits(ry, st)
-        if sy[3] > 0 and nyears >= 2 and ((hits == nyears) or (sy[0] == "match" and best_sc[0] != "match")):
+        med_err, frac6, _ = year_err(ry, st)
+        approx = nyears >= 3 and frac6 >= 0.8 and med_err <= 0.06 and best_sc[0] != "match"
+        if sy[3] > 0 and nyears >= 2 and ((hits == nyears) or (sy[0] == "match" and best_sc[0] != "match") or approx):
             rp, best_sc, method = ry, sy, "year_columns"
+            if approx and hits != nyears:
+                year_note = f"per-year column totals within {med_err:.1%} of printed (approximate; some rows missing)"
     for alt_dir, alt_name in (("raw_col", "column_position"), ("raw_pair", "paired_lines")):
         if method == "year_columns":
             break
@@ -120,7 +125,7 @@ for doc_id, m in man.items():
         if not alt.exists():
             continue
         sa = score_raw(alt, st)
-        if sa[3] > 0 and ((sa[0] == "match" and best_sc[0] != "match") or
+        if sa[3] > 0 and sa[2] <= 3 * max(best_sc[2], 1) and ((sa[0] == "match" and best_sc[0] != "match") or
                           (best_sc[0] != "match" and sa[0] != "n/a" and sa[1] < best_sc[1])):
             rp, best_sc, method = alt, sa, alt_name
     raw = pd.read_csv(rp, dtype=str, keep_default_na=False)
@@ -134,6 +139,9 @@ for doc_id, m in man.items():
     tot_mask = raw["holder_name_raw"].str.match(r"(?i)^\W*(grand\s+|sub\s*-?\s*)?total\b")
     extra_totals = [float(v) for v in raw.loc[tot_mask, "net_amount"].fillna(raw.loc[tot_mask, "shares"]).dropna()]
     raw = raw[~tot_mask].copy()
+    _ia = raw["issues"].str.contains("int_amount")
+    if _ia.any() and _ia.mean() < 0.5:       # mostly decimal amounts: whole-number "rows" are address/continuation noise
+        raw = raw[~_ia].copy()
     raw = resolve_ambiguous(raw, st, extra_totals)
     addr = raw["holder_name_raw"].str.upper().str.contains(r"\b(?:FLOOR|HOUSE|ROAD|APT|FLAT|BUILDING|MANSION|TOWER|AVENUE)\b", regex=True)
     for mask, tag in ((raw["net_amount"] > 1_000_000, "implausible_amount"), (addr, "name_looks_like_address")):
@@ -163,7 +171,8 @@ for doc_id, m in man.items():
                 issues.append(f"per-year totals match for {len(hit)} years; {len(miss)} year total(s) unreadable ('#####') in the PDF")
     else:
         d["total_check"] = "no_total_printed"
-    bad = raw["issues"].str.replace("amount_repaired", "", regex=False).str.strip(";").ne("")
+    info = r"amount_repaired|year_column|col_amount|paired_lines|int_amount|shares_(?:first|last)_number_verified_by_total"
+    bad = raw["issues"].str.replace(info, "", regex=True).str.replace(";", "", regex=False).str.strip().ne("")
     flagged = bad.mean() if len(raw) else 1
     if st.get("textless_pages"):
         issues.append(f"{st['textless_pages']} pages without text (need OCR)")
@@ -178,6 +187,9 @@ for doc_id, m in man.items():
         issues.append(st["error"])
     ok = (d["total_check"] in ("match", "no_total_printed") and flagged < 0.02 and not st.get("textless_pages")
           and st["unparsed_idlike"] <= max(2, 0.01 * len(raw)) and len(raw) > 0)
+    if year_note:
+        issues.append(year_note)
+        ok = False
     d["status"] = "parsed" if ok else "partial"
     if st.get("ocr_rows"):
         d["status"] = "partial"
@@ -219,6 +231,11 @@ if os.environ.get("DOCS_ONLY"):
     raise SystemExit
 div = pd.DataFrame(rows)
 print("dividend rows:", len(div))
+_st = {r["doc_id"]: r["status"] for r in docs}
+_tc = {r["doc_id"]: r["total_check"] for r in docs}
+# whole-number amounts are ambiguous with share counts: trust them only when the document total matched
+iam = div["issues"].str.contains("int_amount") & (div["doc_id"].map(_tc) != "match")
+div.loc[iam, "issues"] = div.loc[iam, "issues"].apply(lambda x: (x + ";unverified_int_amount").strip(";"))
 
 # duplicated (company, year, folio/bo, amount)
 key = div["company"] + "|" + div["dividend_year"].astype(str) + "|" + div["bo_id"].where(div["bo_id"] != "", div["folio_no"]) \
@@ -309,7 +326,7 @@ if len(sd):
 
 # ---------- holders ----------
 def agg(g):
-    unver = g["issues"].str.contains("implausible_amount|name_looks_like_address")
+    unver = g["issues"].str.contains("implausible_amount|name_looks_like_address|unverified_int_amount")
     cash = g.loc[(g["dividend_type"] != "stock") & ~unver, "net_amount"].sum()
     cash_unver = g.loc[(g["dividend_type"] != "stock") & unver, "net_amount"].sum()
     return pd.Series(dict(
@@ -337,6 +354,8 @@ top = holders[((holders["total_cash_bdt"] >= 50000) | (holders["companies_count"
 top.to_csv(OUT / "top_holders.csv", index=False)
 review_df.to_csv(OUT / "review_queue.csv", index=False)
 docs_df = pd.DataFrame(docs)
+_e = pd.to_numeric(docs_df["extracted_total"], errors="coerce"); _s = pd.to_numeric(docs_df["stated_total"], errors="coerce")
+docs_df["coverage_pct"] = ((_e / _s) * 100).where(_s > 0).round(1)
 docs_df.to_csv(OUT / "documents_report.csv", index=False)
 docs_df[docs_df["status"].isin(["failed", "partial"])].to_csv(OUT / "failed_or_partial.csv", index=False)
 
@@ -353,7 +372,7 @@ con.commit(); con.close()
 
 # ---------- summary ----------
 pc = docs_df["status"].value_counts().to_dict()
-cash = div_out[(div_out["dividend_type"] != "stock") & ~div_out["issues"].str.contains("implausible_amount|name_looks_like_address")]
+cash = div_out[(div_out["dividend_type"] != "stock") & ~div_out["issues"].str.contains("implausible_amount|name_looks_like_address|unverified_int_amount")]
 lines = ["# Unclaimed dividends - summary", "", f"Documents: {pc}", f"Dividend rows: {len(div_out):,}",
          f"Holders: {len(holders):,}", f"Total cash BDT (all rows): {cash['net_amount'].sum():,.2f}",
          f"Total shares (stock rows): {div_out['shares'].sum():,.0f}",
