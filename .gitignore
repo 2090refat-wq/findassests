@@ -8,3 +8,5 @@ extract_redo.log
 dl_run*.log
 __pycache__/
 build_run.log
+site/lookup.sqlite
+site/*.log

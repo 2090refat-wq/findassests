@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Unclaimed Dividend Lookup</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#14202b; --muted:#5b6b7a; --line:#dde3ea;
+  --brand:#0b5d4b; --brand-ink:#fff; --accent:#e8f3ef; --warn:#8a5a00; --warn-bg:#fff4dc; --err:#a12626; --err-bg:#fdeceb;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1519;--card:#18222a;--ink:#e8eef3;--muted:#9fb0bf;--line:#2a3944;--brand:#3fb594;--brand-ink:#08241c;--accent:#17302a;--warn:#f1c168;--warn-bg:#33290f;--err:#ff9d96;--err-bg:#361a19}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 48px}
+header{padding:28px 0 8px}
+h1{margin:0;font-size:1.65rem;letter-spacing:-.01em}
+.bn{color:var(--muted);font-size:.95rem;margin-top:2px}
+.lead{color:var(--muted);margin:10px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.tab{appearance:none;background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+label{display:block;font-weight:600;margin:0 0 6px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:48px}
+input:focus,select:focus,button:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 45%,transparent);outline-offset:1px}
+#bo,#folio{flex:1 1 260px;font-size:1.15rem;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+select{flex:1 1 240px}
+.go{background:var(--brand);color:var(--brand-ink);border:0;border-radius:10px;padding:12px 24px;font:inherit;font-weight:700;cursor:pointer;min-height:48px}
+.go[disabled]{opacity:.6;cursor:progress}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 0 0}
+.msg{border-radius:10px;padding:12px 14px;margin-top:14px}
+.msg.err{background:var(--err-bg);color:var(--err)}
+.msg.info{background:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:4px}
+.tile{background:var(--accent);border-radius:12px;padding:14px 16px}
+.tile .k{font-size:.85rem;color:var(--muted)}
+.tile .v{font-size:1.5rem;font-weight:750;font-variant-numeric:tabular-nums}
+.who{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.who .id{color:var(--muted);font-variant-numeric:tabular-nums}
+.co{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden}
+.co>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.co>summary::-webkit-details-marker{display:none}
+.co h3{margin:0;font-size:1.05rem}
+.nums{display:flex;gap:18px;font-variant-numeric:tabular-nums}
+.nums div{text-align:right}
+.nums small{display:block;color:var(--muted);font-size:.78rem}
+.nums b{font-size:1.05rem}
+.chev{color:var(--muted);transition:transform .15s}
+.co[open] .chev{transform:rotate(90deg)}
+table{width:100%;border-collapse:collapse;font-size:.93rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 14px;border-top:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+td.r,th.r{text-align:right}
+.badge{display:inline-block;font-size:.72rem;font-weight:700;border-radius:99px;padding:2px 8px;background:var(--warn-bg);color:var(--warn)}
+a{color:var(--brand)}
+.tools{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.ghost{background:none;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 14px;font:inherit;cursor:pointer}
+footer{color:var(--muted);font-size:.85rem;margin-top:22px}
+.scroll{overflow-x:auto}
+[hidden]{display:none!important}
+@media print{header .lead,.card form,.tabs,.tools,.ghost{display:none}body{background:#fff;color:#000}.co{break-inside:avoid}.co>summary .chev{display:none}details.co:not([open])>*:not(summary){display:block}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Unclaimed Dividend Lookup</h1>
+    <div class="bn">অদাবিকৃত লভ্যাংশ অনুসন্ধান</div>
+    <p class="lead">Enter a BO number to see unclaimed cash dividends, stock (bonus) shares and other items listed against it in each company.</p>
+  </header>
+
+  <main>
+    <section class="card" aria-label="Search">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="t-bo" aria-selected="true" aria-controls="p-bo">BO number <span class="bn">বিও নম্বর</span></button>
+        <button class="tab" role="tab" id="t-folio" aria-selected="false" aria-controls="p-folio">Folio number <span class="bn">ফোলিও</span></button>
+      </div>
+
+      <form id="f-bo" novalidate>
+        <div id="p-bo" role="tabpanel">
+          <label for="bo">16-digit BO ID</label>
+          <div class="row">
+            <input id="bo" inputmode="numeric" autocomplete="off" placeholder="1201 xxxx xxxx xxxx" maxlength="24" aria-describedby="bo-hint">
+            <button class="go" type="submit">Search</button>
+          </div>
+          <p class="hint" id="bo-hint">Spaces and dashes are fine. The BO ID is on the shareholder's CDBL / brokerage statement.</p>
+        </div>
+      </form>
+
+      <form id="f-folio" novalidate hidden>
+        <div id="p-folio" role="tabpanel">
+          <label for="company">Company</label>
+          <div class="row">
+            <select id="company" aria-label="Company"><option value="">Loading companies…</option></select>
+          </div>
+          <label for="folio" style="margin-top:12px">Folio number</label>
+          <div class="row">
+            <input id="folio" autocomplete="off" placeholder="e.g. 003155 or B02-398" maxlength="30">
+            <button class="go" type="submit">Search</button>
+          </div>
+          <p class="hint">Older lists (paper certificates) use folio numbers instead of BO IDs.</p>
+        </div>
+      </form>
+
+      <div id="code-row" hidden style="margin-top:12px">
+        <label for="code">Access code</label>
+        <input id="code" type="password" autocomplete="off" style="width:100%;max-width:300px">
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="result" aria-live="polite"></section>
+  </main>
+
+  <footer>
+    <p><strong>Please note.</strong> This information is compiled from lists that listed companies and the Capital Market Stabilization Fund (CMSF) have published. It may be incomplete or out of date, amounts may already have been claimed, and some entries are marked <span class="badge">check</span> because the source line could not be read with certainty. Always confirm with the company's share department or CMSF before relying on a figure.</p>
+    <p id="updated"></p>
+  </footer>
+</div>
+
+<script>
+const SB = "https://pwttbxovvwsfeiromnex.supabase.co";
+const KEY = "sb_publishable_hRnRlxP1ENlWHy3QAuoXtw__C9fJwIh";
+const $ = (id) => document.getElementById(id);
+const fmt = new Intl.NumberFormat("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmtN = new Intl.NumberFormat("en-IN", {maximumFractionDigits: 0});
+const TYPES = {cash:"Cash dividend", stock:"Stock (bonus) dividend", fraction:"Fractional dividend", right:"Right shares", ipo_refund:"IPO refund", other:"Other"};
+const SHARE_TYPES = new Set(["stock","right"]);
+let needCode = false;
+
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const c of kids) if (c != null) n.append(c);
+  return n;
+}
+function setStatus(text, kind) {
+  const s = $("status"); s.replaceChildren();
+  if (text) s.append(el("div", {class: "msg " + (kind || "info"), text}));
+}
+async function rpc(name, body) {
+  const r = await fetch(`${SB}/rest/v1/rpc/${name}`, {
+    method: "POST", headers: {"apikey": KEY, "Content-Type": "application/json"}, body: JSON.stringify(body || {})
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.message || "request_failed"); e.code = j.message; throw e; }
+  return j;
+}
+
+/* tabs */
+function showTab(which) {
+  const bo = which === "bo";
+  $("t-bo").setAttribute("aria-selected", bo); $("t-folio").setAttribute("aria-selected", !bo);
+  $("f-bo").hidden = !bo; $("f-folio").hidden = bo;
+  setStatus(""); $("result").replaceChildren();
+  (bo ? $("bo") : $("folio")).focus();
+}
+$("t-bo").onclick = () => showTab("bo");
+$("t-folio").onclick = () => showTab("folio");
+
+/* BO input: group digits as the user types */
+$("bo").addEventListener("input", (e) => {
+  const d = e.target.value.replace(/\D/g, "").slice(0, 16);
+  e.target.value = d.replace(/(\d{4})(?=\d)/g, "$1 ");
+});
+
+function money(n) { return "৳ " + fmt.format(Number(n) || 0); }
+function typeLabel(t) { return TYPES[t] || TYPES.other; }
+
+function render(res, idLabel) {
+  const out = $("result"); out.replaceChildren();
+  if (res.error === "invalid_bo") return setStatus("A BO ID has exactly 16 digits. Please check the number and try again.", "err");
+  if (res.error === "invalid_folio") return setStatus("Please choose a company and enter a folio number.", "err");
+  if (!res.found) {
+    setStatus("");
+    out.append(el("div", {class: "card"},
+      el("h2", {text: "No unclaimed items found", style: "margin:0 0 6px;font-size:1.2rem"}),
+      el("p", {text: "Nothing is listed for " + idLabel + " in the lists we have. That does not prove there is nothing: some companies publish only folio numbers, some lists could not be read, and some companies have not published a list."}),
+      el("p", {class: "hint", text: "Tip: try the Folio tab with the shareholder's old folio number."})));
+    return;
+  }
+  setStatus("");
+  const t = res.totals;
+  const head = el("div", {class: "who"},
+    el("h2", {text: res.name ? "Holder: " + res.name : "Results", style: "margin:0;font-size:1.2rem"}),
+    el("span", {class: "id", text: idLabel}));
+  const tiles = el("div", {class: "tiles"},
+    tile("Unclaimed cash (dividends, refunds)", money(t.cash)),
+    tile("Bonus / right shares", fmtN.format(t.shares) + " shares"),
+    tile("Companies", String(t.companies)));
+  const card = el("div", {class: "card"}, head, el("div", {style: "height:12px"}), tiles);
+
+  for (const c of res.companies) {
+    const rows = c.items.map((it) => {
+      const isShare = SHARE_TYPES.has(it.type);
+      const amount = isShare ? (it.shares == null ? "—" : fmtN.format(it.shares) + " shares") : (it.net == null ? "—" : money(it.net));
+      const srcName = "List " + (it.doc || "") + (it.page ? ", p. " + it.page : "");
+      const src = /^https?:\/\//.test(it.url || "") ? el("a", {href: it.url, target: "_blank", rel: "noopener noreferrer", text: srcName}) : document.createTextNode(srcName);
+      return el("tr", {},
+        el("td", {text: it.year || "—"}),
+        el("td", {}, typeLabel(it.type), it.verified ? null : el("span", {class: "badge", style: "margin-left:6px", text: "check"})),
+        el("td", {class: "r", text: amount}),
+        el("td", {}, src));
+    });
+    const table = el("div", {class: "scroll"}, el("table", {},
+      el("thead", {}, el("tr", {}, el("th", {text: "Year"}), el("th", {text: "Type"}), el("th", {class: "r", text: "Amount"}), el("th", {text: "Source"}))),
+      el("tbody", {}, ...rows)));
+    const sum = el("summary", {},
+      el("h3", {text: c.company}),
+      el("div", {class: "nums"},
+        el("div", {}, el("small", {text: "Cash"}), el("b", {text: money(c.cash)})),
+        el("div", {}, el("small", {text: "Shares"}), el("b", {text: fmtN.format(c.shares)})),
+        el("span", {class: "chev", "aria-hidden": "true", text: "›"})));
+    const d = el("details", {class: "co"}, sum, table);
+    if (res.companies.length <= 3) d.open = true;
+    card.append(d);
+  }
+  card.append(el("div", {class: "tools"}, (() => { const b = el("button", {class: "ghost", type: "button", text: "Print / save PDF"}); b.onclick = () => window.print(); return b; })()));
+  out.append(card);
+  out.scrollIntoView({behavior: "smooth", block: "start"});
+}
+function tile(k, v) { return el("div", {class: "tile"}, el("div", {class: "k", text: k}), el("div", {class: "v", text: v})); }
+
+async function run(btn, fn) {
+  btn.disabled = true; setStatus("Searching…");
+  try { await fn(); }
+  catch (e) {
+    if (e.code === "rate_limited") setStatus("Too many searches in a short time. Please wait a minute and try again.", "err");
+    else if (e.code === "code_required") { $("code-row").hidden = false; setStatus("A valid access code is required.", "err"); }
+    else setStatus("Sorry, the search could not be completed. Check your connection and try again.", "err");
+  } finally { btn.disabled = false; }
+}
+const codeVal = () => (needCode ? $("code").value : null) || null;
+
+$("f-bo").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const digits = $("bo").value.replace(/\D/g, "");
+  if (digits.length !== 16) return setStatus("A BO ID has exactly 16 digits (you entered " + digits.length + ").", "err");
+  run(e.submitter || e.target.querySelector(".go"), async () => render(await rpc("ss_lookup_bo", {p_bo: digits, p_code: codeVal()}), "BO " + digits.replace(/(\d{4})(?=\d)/g, "$1 ")));
+});
+$("f-folio").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const company = $("company").value, folio = $("folio").value.trim();
+  if (!company || !folio) return setStatus("Please choose a company and enter a folio number.", "err");
+  run(e.submitter || e.target.querySelector(".go"), async () => render(await rpc("ss_lookup_folio", {p_company: company, p_folio: folio, p_code: codeVal()}), company + " · folio " + folio));
+});
+
+/* init */
+(async () => {
+  try {
+    const info = await rpc("ss_info");
+    needCode = !!info.require_code; $("code-row").hidden = !needCode;
+    if (info.updated) $("updated").textContent = "Data last updated: " + info.updated + ".";
+  } catch (_) {}
+  try {
+    const list = await rpc("ss_companies");
+    const sel = $("company"); sel.replaceChildren(el("option", {value: "", text: "Choose a company…"}));
+    for (const c of list) sel.append(el("option", {value: c, text: c}));
+  } catch (_) { $("company").replaceChildren(el("option", {value: "", text: "Companies unavailable"})); }
+})();
+</script>
+</body>
+</html>
