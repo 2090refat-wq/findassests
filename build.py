@@ -353,6 +353,8 @@ top = holders[((holders["total_cash_bdt"] >= 50000) | (holders["companies_count"
               & (holders["settled_all"] == 0) & (holders["institution"] == 0)].drop(columns=["settled_all", "institution"])
 top.to_csv(OUT / "top_holders.csv", index=False)
 review_df.to_csv(OUT / "review_queue.csv", index=False)
+if len(sd):
+    sd.to_csv(OUT / "settled_claims.csv", index=False)
 docs_df = pd.DataFrame(docs)
 _e = pd.to_numeric(docs_df["extracted_total"], errors="coerce"); _s = pd.to_numeric(docs_df["stated_total"], errors="coerce")
 docs_df["coverage_pct"] = ((_e / _s) * 100).where(_s > 0).round(1)
@@ -361,7 +363,7 @@ docs_df[docs_df["status"].isin(["failed", "partial"])].to_csv(OUT / "failed_or_p
 
 (OUT / "unclaimed.sqlite").unlink(missing_ok=True)
 con = sqlite3.connect(OUT / "unclaimed.sqlite")
-schema = (ROOT / "schema.sql").read_text().replace("raw_row_json      TEXT                -- the original extracted cells, for audit",
+schema = (ROOT / "schema.sql").read_text().replace("  issues            TEXT\n);", "  issues            TEXT,\n  coverage_pct      REAL\n);", 1).replace("raw_row_json      TEXT                -- the original extracted cells, for audit",
                                                     "raw_row_json      TEXT,\n  issues            TEXT").replace("total_cash_bdt    REAL,", "total_cash_bdt    REAL,\n  total_cash_unverified_bdt REAL,")
 con.executescript(schema)
 for tname, df in (("documents", docs_df), ("dividends", div_out), ("holders", hold_csv), ("review_queue", review_df),
